@@ -1,0 +1,7 @@
+node_modules/
+.runtime/
+.env
+.env.*
+*.sqlite*
+.DS_Store
+artifacts/local-*

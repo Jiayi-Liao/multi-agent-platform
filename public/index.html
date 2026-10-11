@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Relay · Multi-Agent Platform</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/"
+        ><span class="brand-mark">↗</span
+        ><span>relay<span class="brand-dot">.</span></span></a
+      >
+      <div class="workspace-label">MULTI-AGENT PLATFORM <span>LOCAL</span></div>
+      <button id="new-run" class="outline wide">＋ New run</button>
+      <div class="section-label">
+        RUN HISTORY <span id="run-count">00</span>
+      </div>
+      <nav id="run-list" aria-label="Run history"></nav>
+      <div class="sidebar-footer">
+        <span class="connection-dot"></span
+        ><span id="connection">Connecting</span
+        ><small>Persistent local event store</small>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="breadcrumb">
+          Workspace <span>/</span> <strong>Mission control</strong>
+        </div>
+        <div class="topbar-right">
+          <span class="key-hint">LOCAL FIRST</span
+          ><span class="avatar">JL</span>
+        </div>
+      </header>
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow">OBSERVE. UNDERSTAND. REPLAY.</div>
+          <h1>The work, in motion<span>.</span></h1>
+          <p>Follow every agent, every handoff, every turn.</p>
+        </div>
+        <div class="heading-actions">
+          <select id="demo-mode" aria-label="Demo runtime">
+            <option value="deterministic">Deterministic demo</option>
+            <option value="codex" disabled>
+              Codex CLI · enable on server
+            </option></select
+          ><button id="start-demo" class="primary">↗ Launch demo</button>
+        </div>
+      </section>
+      <div id="empty" class="empty-welcome" hidden>
+        <span class="empty-orbit">◎</span>
+        <h2>Your first mission starts here.</h2>
+        <p>
+          Launch the rewriter / verifier demo to watch a draft move through
+          review and revision.<br />Or create a run and connect your own agents
+          through the API.
+        </p>
+        <button id="empty-demo" class="primary">Launch a demo ↗</button>
+      </div>
+      <div id="workspace" hidden>
+        <section class="run-heading">
+          <div>
+            <span id="run-badge" class="badge">RUNNING</span>
+            <h2 id="run-title"></h2>
+            <span id="run-id" class="mono muted"></span>
+          </div>
+          <div>
+            <button id="export" class="quiet">↓ Export</button
+            ><button id="finish" class="quiet">Finish run</button
+            ><button id="cancel" class="quiet danger">Stop run</button>
+          </div>
+        </section>
+        <section class="stats">
+          <div>
+            <span>AGENTS</span><strong id="stat-agents">0</strong
+            ><small>Roles in this run</small>
+          </div>
+          <div>
+            <span>MESSAGES</span><strong id="stat-messages">0</strong
+            ><small>Explicit handoffs</small>
+          </div>
+          <div>
+            <span>PENDING REPLIES</span><strong id="stat-pending">0</strong
+            ><small>Awaiting a response</small>
+          </div>
+          <div>
+            <span>ELAPSED</span><strong id="stat-elapsed">00:00</strong
+            ><small id="stat-events">0 recorded events</small>
+          </div>
+        </section>
+        <div class="workspace-grid">
+          <div class="left-column">
+            <section class="panel graph-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="panel-index">01</span>
+                  <h3>Agent network</h3>
+                </div>
+                <div>
+                  <span id="view-mode" class="live-tag">● LIVE</span
+                  ><button id="add-agent" class="quiet">＋ Add agent</button>
+                </div>
+              </div>
+              <div class="graph-scroll">
+                <div id="graph" aria-label="Agent communication graph"></div>
+              </div>
+              <div class="graph-legend">
+                <span
+                  ><i class="legend-line"></i>Message flow · click to
+                  filter</span
+                ><span
+                  ><i class="legend-line dashed"></i>Parent relationship</span
+                >
+              </div>
+            </section>
+            <section class="panel replay-panel">
+              <div class="replay-head">
+                <div>
+                  <span class="panel-index">02</span>
+                  <h3>Playback</h3>
+                  <span id="replay-label" class="muted mono"
+                    >Following live events</span
+                  >
+                </div>
+                <button id="go-live" class="quiet">Return to live ↗</button>
+              </div>
+              <div class="replay-controls">
+                <button id="rewind" class="control" aria-label="Jump to start">
+                  |◀</button
+                ><button
+                  id="step-back"
+                  class="control"
+                  aria-label="Previous event"
+                >
+                  ‹</button
+                ><button id="play" class="play-button" aria-label="Play replay">
+                  ▶</button
+                ><button id="step-next" class="control" aria-label="Next event">
+                  ›</button
+                ><input
+                  id="scrubber"
+                  type="range"
+                  min="0"
+                  max="0"
+                  value="0"
+                  aria-label="Replay position"
+                /><select id="speed" aria-label="Replay speed">
+                  <option value="1">1×</option>
+                  <option value="2">2×</option>
+                  <option value="4">4×</option>
+                  <option value="8">8×</option>
+                </select>
+              </div>
+              <div class="replay-scale">
+                <span>RUN START</span><span id="cursor-label">EVENT 0 / 0</span
+                ><span id="duration-label">00:00</span>
+              </div>
+            </section>
+            <section class="panel timeline-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="panel-index">03</span>
+                  <h3>Activity timeline</h3>
+                  <span id="activity-count" class="count-pill">0</span>
+                </div>
+                <button id="clear-filter" class="quiet" hidden>
+                  Clear filter ×
+                </button>
+              </div>
+              <div class="timeline-toolbar">
+                <input
+                  id="search"
+                  type="search"
+                  placeholder="Search messages, agents, tools…"
+                  aria-label="Search activity"
+                /><select id="event-kind" aria-label="Filter event type">
+                  <option value="all">All activity</option>
+                  <option value="message">Messages</option>
+                  <option value="tool">Tools</option>
+                  <option value="artifact">Artifacts</option>
+                  <option value="agent">Agents</option>
+                </select>
+              </div>
+              <div id="lanes" class="agent-lanes"></div>
+              <div id="timeline" class="event-list"></div>
+            </section>
+          </div>
+          <aside class="panel inspector">
+            <div class="panel-head">
+              <div>
+                <span class="panel-index">04</span>
+                <h3>Inspector</h3>
+              </div>
+              <span class="muted">↙</span>
+            </div>
+            <div id="inspector-content"></div>
+          </aside>
+        </div>
+      </div>
+      <footer class="page-footer">
+        <span>RELAY / v0.1</span><span>All events stay on this machine.</span
+        ><span>BUILT FOR THE LONG RUN ↗</span>
+      </footer>
+    </main>
+    <dialog id="run-dialog">
+      <form id="run-form">
+        <div class="eyebrow">A NEW MISSION</div>
+        <h2>Create a run</h2>
+        <label
+          >Run name<input
+            name="title"
+            required
+            maxlength="140"
+            placeholder="Research, review, build…"
+        /></label>
+        <p class="muted">
+          Add any roles, then send messages from the inspector or connect an
+          adapter through the API.
+        </p>
+        <div class="dialog-actions">
+          <button type="button" class="quiet" data-close>Cancel</button
+          ><button class="primary">Create run ↗</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="agent-dialog">
+      <form id="agent-form">
+        <div class="eyebrow">EXPAND THE TEAM</div>
+        <h2>Add an agent</h2>
+        <label
+          >Name<input
+            name="name"
+            required
+            maxlength="100"
+            placeholder="Researcher" /></label
+        ><label
+          >Role<input
+            name="role"
+            required
+            maxlength="100"
+            placeholder="research" /></label
+        ><label for="parent-select">Parent agent</label
+        ><select name="parentId" id="parent-select"></select>
+        <div class="dialog-actions">
+          <button type="button" class="quiet" data-close>Cancel</button
+          ><button class="primary">Add agent ↗</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
