@@ -2,7 +2,7 @@
 
 A local workspace for watching agents communicate and replaying their work. Roles are data: a run can contain writers, reviewers, researchers, planners, or any future role without changing the UI.
 
-![Dashboard](artifacts/dashboard.jpg)
+![Mission overview](artifacts/overview-redesign.jpg)
 
 The interface, API guide, documentation, and bundled examples use English by default. Agent messages and artifacts retain the content you submit.
 
@@ -39,6 +39,13 @@ Open **http://localhost:4310**, then click **Launch demo**. Or run `npm run demo
 The demo intentionally starts from a flawed announcement, then goes through **reject → revise → accept**. The initial flawed draft is a fixed test fixture in both modes; this guarantees a meaningful review target. Deterministic mode uses fixtures throughout. Codex mode invokes real verifier and rewriter turns after that initial fixture.
 
 ## What you can do
+
+Use the sidebar to move between **Overview**, **Replay studio**, and **Agent crew**. The URL hash preserves the selected view on reload and supports direct links on GitHub Pages (`#overview`, `#replay`, `#agents`).
+
+- **Overview:** a 3D mission outpost, compact run metrics, the latest output, and quick crew access.
+- **Replay studio:** a current-event card, transport controls, scrollable chapter checkpoints, and the complete event journal. Events ahead of the cursor are dimmed; selecting one restores that exact point. Space toggles playback and arrow keys step events outside text fields and controls with their own native keyboard behavior.
+- **Agent crew:** search arbitrary names or roles, inspect current activity and parent relationships, and switch between complete history, messages, artifacts, and tools. Opening a record jumps to it in replay. Every profile follows the selected replay point; agents and output that do not exist yet remain absent.
+
 
 - Explore a Three.js agent outpost: robots, workstations, glowing communication routes, and recorded send packets. Drag to orbit, scroll or use buttons to zoom, and reset the camera. Select a robot to inspect it; select a route to filter its messages. Arbitrary roles and parent relationships appear automatically.
 - The 3D world follows the replay clock, including agent statuses and message sends. Pausing freezes activity; scrubbing reconstructs that point in history. Send animations last 1.8 seconds and do not imply delivery — acknowledgements are recorded separately. Accessible agent/route buttons remain available when WebGL2 is unavailable.
@@ -166,7 +173,7 @@ Tests cover correlated replies, idempotency, acknowledgement transitions, run is
 
 ## Scope and next steps
 
-This first version includes communication recording and playback plus a functioning Codex demo adapter. It does not manage arbitrary desktop agent processes, provide multi-user access, implement MCP, automatically resume crashed workers, or import exported histories. Large histories currently load into memory; pagination, checkpoints, and timeline virtualization are natural next steps for very long runs.
+This first version includes communication recording and playback plus a functioning Codex demo adapter. It does not manage arbitrary desktop agent processes, provide multi-user access, implement MCP, automatically resume crashed workers, or import exported histories. Large histories currently load into memory; pagination, state snapshots, and timeline virtualization are natural next steps for very long runs.
 
 ## Inspiration
 

@@ -217,6 +217,8 @@ export function createApp({
           ],
           "/style.css": ["public/style.css", "text/css"],
           "/theme.css": ["public/theme.css", "text/css"],
+          "/experience.css": ["public/experience.css", "text/css"],
+          "/history.js": ["src/history.js", "text/javascript"],
           "/theme.js": ["public/theme.js", "text/javascript"],
           "/state.js": ["src/state.js", "text/javascript"],
           "/favicon.svg": ["public/favicon.svg", "image/svg+xml"],

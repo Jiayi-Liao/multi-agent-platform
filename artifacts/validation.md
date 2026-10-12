@@ -39,7 +39,7 @@ Screenshots: [desktop](dashboard.jpg), [mobile](mobile.jpg). Full synthetic expo
 
 ## Boundaries
 
-This is a local MVP. It captures communication routed through its broker and activity emitted by adapters. It does not automatically import existing Codex desktop subagent sessions. Replay reconstructs recorded state and does not rerun models. Worker resumption, multi-user authentication, MCP, pagination, and checkpoints are future work.
+This is a local MVP. It captures communication routed through its broker and activity emitted by adapters. It does not automatically import existing Codex desktop subagent sessions. Replay reconstructs recorded state and does not rerun models. Worker resumption, multi-user authentication, MCP, pagination, and state snapshots are future work.
 
 ## GitHub Pages and API reference
 
@@ -73,3 +73,16 @@ This is a local MVP. It captures communication routed through its broker and act
 - The light theme covers panels, forms, status badges, history, replay, timeline, inspector, documentation, and the Three.js outpost. Switching updates fog, lighting, base materials, and labels while preserving the current run and camera.
 - Verified light/dark switching, reload persistence, and cross-page preference sharing in the browser. Dashboard and guide stayed within a 390px viewport. Syntax checks, all 31 tests, and the Pages build passed, including delivery and packaging of both theme assets.
 - Preview: [light theme](light-theme.jpg).
+
+## Mission overview, replay studio, and crew directory
+
+- Added navigable `#overview`, `#replay`, and `#agents` views with a field-guide visual system: warm paper, forest accents, serif display typography, robot portraits, and matching dark styling. The Three.js outpost remains interactive.
+- Overview prioritizes the mission world, compact metrics, latest artifact, and crew access. The replay studio adds a current-event card, scrollable navigation chapters, complete event journal, and keyboard transport controls. Chapters are event landmarks, not persisted state snapshots.
+- Agent profiles support arbitrary roles and expose complete cursor-limited histories, incoming/outgoing messages, artifact versions, and tool input/output. The synthetic Verifier profile displayed all **26 related events**, including both sides of message acknowledgement history.
+- Selecting a recorded message restored its original queued state. Jumping to event 1 removed all agents and artifacts, while the full journal remained available for navigation. The rewriter/verifier rejection checkpoint displayed the actual recorded feedback.
+- Browser checks covered default desktop and **390 × 844** mobile, both themes, no document-level horizontal overflow, play/pause, arrow-key stepping, chapter navigation, profile tabs, and record-to-replay navigation. A deprecated shadow-map constant was replaced with the supported Three.js equivalent.
+- Launched a fresh synthetic browser mission; live history updates reached **55 events and 7 messages**, with the completed crew visible in the new agent page.
+- Verified the local backend through the UI: created Archivist (memory) and Explorer (research), assigned a parent, composed a message from the agent profile, acknowledged delivery and handling, then completed the run. Delivery history showed queued → delivered → answered. The local browser had no errors or warnings. Existing histories were preserved; no new model calls were made.
+- Syntax checks covered **23 JavaScript files**. All **34 tests** passed, including new agent-history, rewind, and chapter-index regressions. Packaging checks cover the new shared history helper and experience stylesheet for local serving and repository-subpath Pages output.
+
+Screenshots: [overview](overview-redesign.jpg), [replay](replay-redesign.jpg), [agent profile](agent-redesign.jpg).

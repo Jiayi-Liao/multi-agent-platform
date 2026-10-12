@@ -7,15 +7,22 @@
     <link rel="icon" href="/favicon.svg" />
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./experience.css" />
     <script src="./theme.js"></script>
   </head>
-  <body>
+  <body data-page="overview">
+    <a class="skip-link" href="#workspace">Skip to workspace</a>
     <aside class="sidebar">
       <a class="brand" href="/"
         ><span class="brand-mark">↗</span
         ><span>relay<span class="brand-dot">.</span></span></a
       >
       <div class="workspace-label">MULTI-AGENT PLATFORM <span>LOCAL</span></div>
+      <nav class="view-nav" aria-label="Workspace views">
+        <a href="#overview" data-page-link="overview" aria-current="page"><span>◎</span> Overview <small>01</small></a>
+        <a href="#replay" data-page-link="replay"><span>▷</span> Replay studio <small>02</small></a>
+        <a href="#agents" data-page-link="agents"><span>♧</span> Agent crew <small>03</small></a>
+      </nav>
       <button id="new-run" class="outline wide">＋ New run</button>
       <div class="section-label">
         RUN HISTORY <span id="run-count">00</span>
@@ -30,7 +37,7 @@
     <main>
       <header class="topbar">
         <div class="breadcrumb">
-          Workspace <span>/</span> <strong>Mission control</strong>
+          Workspace <span>/</span> <strong id="breadcrumb-view">Overview</strong>
         </div>
         <div class="topbar-right">
           <a class="docs-link" href="./api.html">API & setup ↗</a>
@@ -43,7 +50,7 @@
             ☀ Light
           </button>
           <span class="key-hint">LOCAL FIRST</span
-          ><span class="avatar">JL</span>
+          ><a class="source-link" href="https://github.com/Jiayi-Liao/multi-agent-platform" target="_blank" rel="noopener">GitHub ↗</a>
         </div>
       </header>
       <div id="pages-note" class="pages-note" hidden>
@@ -56,9 +63,9 @@
       </div>
       <section class="page-heading">
         <div>
-          <div class="eyebrow">OBSERVE. UNDERSTAND. REPLAY.</div>
-          <h1>The work, in motion<span>.</span></h1>
-          <p>Follow every agent, every handoff, every turn.</p>
+          <div id="page-eyebrow" class="eyebrow">MISSION CONTROL / MULTI-AGENT WORKSPACE</div>
+          <h1 id="page-title">Small agents.<br /><em>Big picture.</em></h1>
+          <p id="page-description">A living world for your crew. Follow the handoffs, understand the work, and replay every turn.</p>
         </div>
         <div class="heading-actions">
           <select id="demo-mode" aria-label="Demo runtime">
@@ -79,7 +86,8 @@
         </p>
         <button id="empty-demo" class="primary">Launch a demo ↗</button>
       </div>
-      <div id="workspace" hidden>
+      <div id="workspace" tabindex="-1" hidden>
+        <div class="view-context"><span id="context-label">YOUR MISSION, AT A GLANCE</span><span class="context-line"></span><span id="context-state">RECORDED & REPLAYABLE</span></div>
         <section class="run-heading">
           <div>
             <span id="run-badge" class="badge">RUNNING</span>
@@ -170,17 +178,23 @@
                 ><span>Click a route to filter · inspect ACKs in history</span>
               </div>
             </section>
+            <section class="panel mission-brief" aria-label="Mission summary">
+              <div class="brief-heading"><span class="eyebrow">THE LATEST CHAPTER</span><a href="#replay" data-page-link="replay">Explore replay ↗</a></div>
+              <div id="mission-summary"></div>
+              <div id="crew-strip" class="crew-strip"></div>
+            </section>
             <section class="panel replay-panel">
               <div class="replay-head">
                 <div>
                   <span class="panel-index">02</span>
-                  <h3>Playback</h3>
+                  <h3>Replay transport</h3>
                   <span id="replay-label" class="muted mono"
                     >Following live events</span
                   >
                 </div>
                 <button id="go-live" class="quiet">Return to live ↗</button>
               </div>
+              <div id="replay-moment" class="replay-moment"></div>
               <div class="replay-controls">
                 <button id="rewind" class="control" aria-label="Jump to start">
                   |◀</button
@@ -212,12 +226,14 @@
                 <span>RUN START</span><span id="cursor-label">EVENT 0 / 0</span
                 ><span id="duration-label">00:00</span>
               </div>
+              <div class="checkpoint-heading"><span>JUMP TO A CHAPTER</span><span>SPACE play / pause · ← → step</span></div>
+              <div id="checkpoints" class="checkpoints" aria-label="Replay checkpoints"></div>
             </section>
             <section class="panel timeline-panel">
               <div class="panel-head">
                 <div>
                   <span class="panel-index">03</span>
-                  <h3>Activity timeline</h3>
+                  <h3>Event journal</h3>
                   <span id="activity-count" class="count-pill">0</span>
                 </div>
                 <button id="clear-filter" class="quiet" hidden>
@@ -253,6 +269,16 @@
             <div id="inspector-content"></div>
           </aside>
         </div>
+        <section id="agent-page" class="agent-page" hidden aria-label="Agent directory">
+          <aside class="crew-directory panel">
+            <div class="directory-head"><span class="eyebrow">MEET THE CREW</span><strong id="directory-count">0 agents</strong></div>
+            <button id="crew-add" type="button" class="outline wide" hidden>＋ Add a crewmate</button>
+            <input id="agent-search" type="search" placeholder="Find a name or role…" aria-label="Search agents" />
+            <div id="agent-directory" class="agent-directory"></div>
+            <p class="directory-note">Every role has a place here. Select a crewmate to trace its work.</p>
+          </aside>
+          <article id="agent-profile" class="agent-profile panel" aria-label="Agent profile"></article>
+        </section>
       </div>
       <footer class="page-footer">
         <span>RELAY / v0.2</span><span>All events stay on this machine.</span

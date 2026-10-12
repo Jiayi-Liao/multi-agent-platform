@@ -143,6 +143,8 @@ test("Pages builds at a repository subpath and publishes only explicit public as
     files.includes("api.html") &&
       files.includes("theme.js") &&
       files.includes("theme.css") &&
+      files.includes("experience.css") &&
+      files.includes("history.js") &&
       files.includes("client.js") &&
       files.includes("vendor/three.core.js"),
   );

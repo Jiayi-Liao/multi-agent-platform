@@ -118,6 +118,8 @@ export async function buildPages(destination = join(root, "dist")) {
     "static-demo.js": "public/static-demo.js",
     "style.css": "public/style.css",
     "theme.css": "public/theme.css",
+    "experience.css": "public/experience.css",
+    "history.js": "src/history.js",
     "theme.js": "public/theme.js",
     "favicon.svg": "public/favicon.svg",
     "state.js": "src/state.js",

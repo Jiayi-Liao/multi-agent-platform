@@ -39,6 +39,8 @@ test("the local server delivers all Three.js modules under the self-only CSP", a
     "/world.js",
     "/theme.js",
     "/theme.css",
+    "/experience.css",
+    "/history.js",
     "/world-state.js",
     "/vendor/three.module.js",
     "/vendor/three.core.js",
