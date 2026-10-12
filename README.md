@@ -6,7 +6,7 @@ A local workspace for watching agents communicate and replaying their work. Role
 
 ## Start
 
-Requires **Node.js 22.13 or newer**. No runtime dependencies or API keys are needed for the deterministic demo.
+Requires **Node.js 22.13 or newer**. No API keys are needed for the deterministic demo.
 
 ```sh
 npm ci --ignore-scripts
@@ -19,7 +19,8 @@ The demo intentionally starts from a flawed announcement, then goes through **re
 
 ## What you can do
 
-- View an agent graph with arbitrary roles and parent relationships. Click a communication arrow to filter its messages.
+- Explore a Three.js agent outpost: robots, workstations, glowing communication routes, and recorded send packets. Drag to orbit, scroll or use buttons to zoom, and reset the camera. Select a robot to inspect it; select a route to filter its messages. Arbitrary roles and parent relationships appear automatically.
+- The 3D world follows the replay clock, including agent statuses and message sends. Pausing freezes activity; scrubbing reconstructs that point in history. Send animations last 1.8 seconds and do not imply delivery — acknowledgements are recorded separately. Accessible agent/route buttons remain available when WebGL2 is unavailable.
 - Follow a timeline with a lane per agent; inspect messages, delivery history, correlated replies, tool input/output, and versioned artifacts.
 - Replay saved runs with play/pause, event stepping, scrubbing, and 1×/2×/4×/8× speed. Replay does not execute agents or make model calls.
 - Create a custom run, add agents, exchange messages manually in the inspector, then finish the run.
@@ -123,10 +124,12 @@ SSE stream and history API
           ↓
 Shared pure state projection
           ↓
-Live graph / agent timeline / inspector / replay
+Three.js world / agent timeline / inspector / replay
 ```
 
-`src/store.js` owns protocol validation and transactional persistence. `src/state.js` projects recorded events and is shared directly by the server and browser. `src/codex.js` adapts real CLI turns. `src/client.js` is runtime-neutral. The frontend uses browser ES modules; no build step, CDN, or framework is required.
+`src/store.js` owns protocol validation and transactional persistence. `src/state.js` projects recorded events and is shared directly by the server and browser. `src/codex.js` adapts real CLI turns. `src/client.js` is runtime-neutral. The frontend uses browser ES modules and Three.js 0.186.1, installed through npm and served locally. No build step, CDN, external assets, or framework is required. `public/world.js` renders the scene; `src/world-state.js` owns stable agent slots and recorded send timing. Graphics resources are disposed on scene changes, pixel density is capped, offscreen rendering pauses, and reduced-motion preferences are respected.
+
+Three.js setup and resizing follow the [official installation guide](https://threejs.org/manual/pages/installation.html) and [responsive canvas guide](https://threejs.org/manual/pages/responsive.html).
 
 Data lives in `.runtime/events.sqlite` and is ignored by Git. The server binds only to `127.0.0.1`; browser writes require the same origin and JSON. Agent IDs are routing identities, **not authenticated principals**. Use this as a trusted local tool; remote hosting needs authentication and authorization first.
 

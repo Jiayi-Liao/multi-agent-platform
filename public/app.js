@@ -1,4 +1,5 @@
 import { project, terminalMessages } from "/state.js";
+import { AgentWorld } from "/world.js";
 const $ = (id) => document.getElementById(id);
 const esc = (value) =>
   String(value ?? "").replace(
@@ -188,96 +189,37 @@ function render() {
   renderTimeline();
   renderInspector();
 }
+let world;
+function pickWorld(item) {
+  if (item.agentId) {
+    selection = { agentId: item.agentId };
+    render();
+  } else if (item.messageId) {
+    selection = {
+      eventId: visibleEvents().find(
+        (e) => e.type === "message.sent" && e.payload.id === item.messageId,
+      )?.id,
+    };
+    render();
+  } else if (item.from) {
+    edgeFilter = { from: item.from, to: item.to };
+    agentFilter = null;
+    renderTimeline();
+  }
+}
 function renderGraph() {
-  const agents = Object.values(state.agents);
-  if (!agents.length) {
-    $("graph").style.width = "";
-    $("graph").style.height = "270px";
-    $("graph").innerHTML =
-      '<div class="empty-graph">No agents at this point in the run.<br>Add an agent or move forward in the timeline.</div>';
-    return;
-  }
-  const depths = new Map();
-  function depth(a) {
-    if (depths.has(a.id)) return depths.get(a.id);
-    const d =
-      a.parentId && state.agents[a.parentId]
-        ? depth(state.agents[a.parentId]) + 1
-        : 0;
-    depths.set(a.id, d);
-    return d;
-  }
-  const groups = [];
-  for (const a of agents) {
-    const d = depth(a);
-    (groups[d] ||= []).push(a);
-  }
-  // Unrelated roots occupy distinct rows; roles and count never determine layout semantics.
-  const height = Math.max(270, ...groups.map((g) => g.length * 132 + 46));
-  const width = Math.max(
-    $("graph").parentElement.clientWidth,
-    groups.length * 248 + 60,
-    550,
-  );
-  const positions = new Map();
-  groups.forEach((group, d) =>
-    group.forEach((a, i) =>
-      positions.set(a.id, {
-        x:
-          groups.length === 1
-            ? (width - 170) / 2
-            : 35 + d * ((width - 320) / (groups.length - 1)),
-        y: (height - group.length * 132) / 2 + i * 132 + 12,
-      }),
-    ),
-  );
-  let svg = `<svg class="graph-edges" width="${width}" height="${height}" role="group" aria-label="Message connections"><defs>${agents.map((a) => `<marker id="arrow-${agents.indexOf(a)}" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="${color(a.id)}"/></marker>`).join("")}</defs>`;
-  for (const a of agents)
-    if (a.parentId && positions.has(a.parentId)) {
-      const p = positions.get(a.parentId),
-        q = positions.get(a.id);
-      svg += `<path d="M${p.x + 170},${p.y + 47} C${p.x + 208},${p.y + 47} ${q.x - 38},${q.y + 47} ${q.x},${q.y + 47}" stroke="#647956" stroke-dasharray="3 5" opacity=".5" fill="none"/>`;
-    }
-  const pairs = new Map();
-  for (const m of Object.values(state.messages)) {
-    const key = JSON.stringify([m.fromAgentId, m.toAgentId]);
-    if (!pairs.has(key))
-      pairs.set(key, { from: m.fromAgentId, to: m.toAgentId, count: 0 });
-    pairs.get(key).count++;
-  }
-  for (const pair of pairs.values()) {
-    const a = positions.get(pair.from),
-      b = positions.get(pair.to);
-    const forward = b.x > a.x,
-      sameColumn = b.x === a.x;
-    const rightArc =
-      Object.keys(state.agents).indexOf(pair.from) <
-      Object.keys(state.agents).indexOf(pair.to);
-    const arcOffset = rightArc ? 90 : -90;
-    const x1 = a.x + (sameColumn ? (rightArc ? 145 : 25) : forward ? 170 : 0),
-      x2 = b.x + (sameColumn ? (rightArc ? 145 : 25) : forward ? 0 : 170);
-    const y1 = a.y + (forward ? 35 : 65),
-      y2 = b.y + (forward ? 35 : 65);
-    const midX = (x1 + x2) / 2,
-      bump = forward ? -20 : 25;
-    const d = sameColumn
-      ? `M${x1},${y1} C${x1 + arcOffset},${y1} ${x2 + arcOffset},${y2} ${x2},${y2}`
-      : `M${x1},${y1} C${midX},${y1 + bump} ${midX},${y2 + bump} ${x2},${y2}`;
-    svg += `<g class="graph-edge" role="button" tabindex="0" aria-label="${esc(name(pair.from))} to ${esc(name(pair.to))}: ${pair.count} messages" data-edge-from="${esc(pair.from)}" data-edge-to="${esc(pair.to)}"><title>${esc(name(pair.from))} → ${esc(name(pair.to))}: ${pair.count} messages</title><path d="${d}" stroke="${color(pair.from)}" stroke-width="1.5" fill="none" marker-end="url(#arrow-${agents.findIndex((a) => a.id === pair.from)})"/><path d="${d}" stroke="transparent" stroke-width="18" fill="none"/><rect x="${sameColumn ? x1 + arcOffset * 0.66 - 14 : midX - 14}" y="${(y1 + y2) / 2 + bump - 10}" width="28" height="18" rx="4" fill="#171d15" stroke="#46533b"/><text x="${sameColumn ? x1 + arcOffset * 0.66 : midX}" y="${(y1 + y2) / 2 + bump + 2}" text-anchor="middle" class="edge-label">${pair.count}</text></g>`;
-  }
-  svg += "</svg>";
-  const nodes = agents
-    .map((a) => {
-      const p = positions.get(a.id);
-      const count = Object.values(state.messages).filter(
-        (m) => m.fromAgentId === a.id || m.toAgentId === a.id,
-      ).length;
-      return `<button class="graph-node ${selection?.agentId === a.id ? "selected" : ""}" data-agent="${esc(a.id)}" style="left:${p.x}px;top:${p.y}px;--node-color:${color(a.id)}"><span class="node-role">${esc(a.role)} <span>↗</span></span><strong class="node-name">${esc(a.name)}</strong><span class="node-footer"><span><i class="node-dot ${a.status}"></i>${esc(a.status)}</span><span>${count} msgs</span></span></button>`;
-    })
-    .join("");
-  $("graph").style.width = `${width}px`;
-  $("graph").style.height = `${height}px`;
-  $("graph").innerHTML = svg + nodes;
+  world ||= new AgentWorld($("world-canvas"), pickWorld);
+  world.update(state, {
+    clock: live
+      ? Math.max(Date.now(), events[cursor]?.timestamp || 0)
+      : playing
+        ? playbackTime
+        : events[cursor]?.timestamp || firstTime(),
+    live,
+    playing,
+    selected: selection?.agentId,
+    runId,
+  });
 }
 function eventInfo(e) {
   const p = e.payload;
@@ -651,7 +593,10 @@ $("cancel").onclick = act(async () => {
   await api(`/api/runs/${runId}/cancel`, {});
   toast("Run stopped. Its history is preserved.");
 });
-window.addEventListener("beforeunload", () => source?.close());
+window.addEventListener("beforeunload", () => {
+  source?.close();
+  world?.dispose();
+});
 // Discover runs launched by CLI/adapters, including while the selected run is quiet.
 setInterval(() => {
   if (!document.hidden)

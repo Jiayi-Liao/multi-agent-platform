@@ -97,23 +97,58 @@
               <div class="panel-head">
                 <div>
                   <span class="panel-index">01</span>
-                  <h3>Agent network</h3>
+                  <h3>Agent outpost</h3>
                 </div>
                 <div>
                   <span id="view-mode" class="live-tag">● LIVE</span
                   ><button id="add-agent" class="quiet">＋ Add agent</button>
                 </div>
               </div>
-              <div class="graph-scroll">
-                <div id="graph" aria-label="Agent communication graph"></div>
+              <div
+                id="graph"
+                class="agent-world"
+                aria-label="Agent communication world"
+              >
+                <div class="world-stage">
+                  <div class="world-heading">
+                    <span class="world-eyebrow">RELAY / SECTOR 01</span
+                    ><strong>A crew. A shared mission.</strong
+                    ><span id="world-hud" class="world-hud"></span>
+                  </div>
+                  <div id="world-canvas" class="world-canvas"></div>
+                  <div class="world-controls">
+                    <button
+                      id="world-zoom-in"
+                      aria-label="Zoom in"
+                      title="Zoom in"
+                    >
+                      ＋</button
+                    ><button
+                      id="world-zoom-out"
+                      aria-label="Zoom out"
+                      title="Zoom out"
+                    >
+                      −</button
+                    ><button id="world-reset" aria-label="Reset camera">
+                      ↺ Reset view
+                    </button>
+                  </div>
+                  <span class="world-hint"
+                    >DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A ROBOT</span
+                  >
+                </div>
+                <div
+                  id="world-roster"
+                  class="world-roster"
+                  aria-label="Agents and message routes"
+                ></div>
               </div>
               <div class="graph-legend">
                 <span
-                  ><i class="legend-line"></i>Message flow · click to
-                  filter</span
-                ><span
-                  ><i class="legend-line dashed"></i>Parent relationship</span
-                >
+                  ><i class="legend-line"></i>Packets animate recorded
+                  sends</span
+                ><span><i class="legend-line dashed"></i>Parent link</span
+                ><span>Click a route to filter · inspect ACKs in history</span>
               </div>
             </section>
             <section class="panel replay-panel">
@@ -201,7 +236,7 @@
         </div>
       </div>
       <footer class="page-footer">
-        <span>RELAY / v0.1</span><span>All events stay on this machine.</span
+        <span>RELAY / v0.2</span><span>All events stay on this machine.</span
         ><span>BUILT FOR THE LONG RUN ↗</span>
       </footer>
     </main>

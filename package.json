@@ -1,6 +1,6 @@
 {
   "name": "multi-agent-platform",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Local multi-agent communication, live visualization, and event replay.",
@@ -14,5 +14,8 @@
     "check": "node scripts/check.js",
     "demo": "node scripts/demo.js",
     "demo:codex": "node scripts/demo.js --codex"
+  },
+  "dependencies": {
+    "three": "0.186.1"
   }
 }

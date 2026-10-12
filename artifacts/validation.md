@@ -2,7 +2,7 @@
 
 ## Automated
 
-`npm run check` passes. `npm test` passes **23 tests**, including protocol invariants, replay projections, persistence, atomic run creation, HTTP/SSE behavior, cancellation, and the CLI adapter's success/error/timeout paths. Local environment: Node 23.11.0, macOS. CI is configured for Node 22 and 24.
+`npm run check` passes. `npm test` passes **26 tests**, including protocol invariants, replay projections, persistence, atomic run creation, HTTP/SSE behavior, cancellation, the CLI adapter's success/error/timeout paths, stable arbitrary-role 3D placement, recorded packet timing, and local delivery of all Three.js modules. Local environment: Node 23.11.0, macOS. CI is configured for Node 22 and 24.
 
 ## Real Codex integration
 
@@ -21,10 +21,21 @@ The initial attempt using the globally configured model was rejected by CLI auth
 - Reopened the completed real CLI run after server restart. Agent graph, saved artifacts, delivery history, and verifier feedback remained available.
 - Tested keyboard activation of a graph edge and confirmed directional message filtering.
 - Stepped through the real run's registration events: three agents and zero messages at that point.
-- Checked desktop (1440 × 1000) and mobile (390 × 844) layouts. Neither had document-level horizontal overflow; the graph has its own scrolling surface on narrow screens.
+- The initial 2D MVP was checked at desktop (1440 × 1000) and mobile (390 × 844). The Three.js update was checked at default desktop (1280 × 720), tablet (1024 × 768), and mobile (390 × 844): no document-level horizontal overflow. The canvas resizes and the inspector moves below the scene on narrow layouts.
 - Browser error/warning logs were empty during the initial interactive run.
 
-Screenshots: [desktop](dashboard.jpg), [mobile replay](mobile.jpg). Full synthetic exports are saved locally as ignored `artifacts/local-*.json`; the SQLite history remains in ignored `.runtime/`.
+## Three.js update · v0.2
+
+- Installed pinned Three.js 0.186.1 through npm; module and core are served locally under the existing self-only CSP. No CDN or imported assets.
+- Launched a fresh UI demo and observed live crew status and message routes. It completed with **55 events, 7 messages**, and reject → revise → accept. CLI demo run `77e93edd-9a3d-4245-b920-caa55d29a5b3` also completed. These are deterministic fixtures; the existing real Codex run above was reused for 3D replay validation without new model calls.
+- Selected a robot directly through canvas raycasting, opened its agent history, dragged to orbit, zoomed, and reset the camera.
+- Selected a directional route and confirmed eight related message/ACK events in the real run.
+- Rewound the real run to event 1: the crew was empty. Stepped once: only Coordinator existed. At event 34 the scene showed Coordinator waiting, Rewriter working, and Verifier waiting, with four recorded sends rather than the completed run's seven.
+- Played at 2× and verified the replay mode; stepping/scrubbing freezes the projected state. Message packets represent recorded sends for 1.8 seconds, not delivery acknowledgements.
+- Accessible agent and route controls sit below the canvas. WebGL2 failure has a readable fallback; that failure path was inspected in source, not forced in this browser. Reduced-motion mode uses stationary packet indicators and removes robot bobbing.
+- Browser error logs were empty throughout Three.js interaction.
+
+Screenshots: [desktop](dashboard.jpg), [mobile](mobile.jpg). Full synthetic exports are saved locally as ignored `artifacts/local-*.json`; the SQLite history remains in ignored `.runtime/`.
 
 ## Boundaries
 

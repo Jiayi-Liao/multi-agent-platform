@@ -200,6 +200,16 @@ export function createApp({
         const files = {
           "/": ["public/index.html", "text/html"],
           "/app.js": ["public/app.js", "text/javascript"],
+          "/world.js": ["public/world.js", "text/javascript"],
+          "/world-state.js": ["src/world-state.js", "text/javascript"],
+          "/vendor/three.module.js": [
+            "node_modules/three/build/three.module.js",
+            "text/javascript",
+          ],
+          "/vendor/three.core.js": [
+            "node_modules/three/build/three.core.js",
+            "text/javascript",
+          ],
           "/style.css": ["public/style.css", "text/css"],
           "/state.js": ["src/state.js", "text/javascript"],
           "/favicon.svg": ["public/favicon.svg", "image/svg+xml"],
