@@ -66,3 +66,10 @@ This is a local MVP. It captures communication routed through its broker and act
 - Translated the API guide, its navigation, endpoint descriptions, protocol explanations, SDK and curl comments, and page metadata to English. Set `lang="en"` and English UI date formatting. Documented English as the default in the README.
 - Checked project source, scripts, tests, documentation, and generated Pages assets for remaining Chinese text; none was found. Agent-provided content remains unchanged.
 - Syntax checks, all 31 existing tests, and the Pages build passed. Browser preview confirmed 14 documented HTTP endpoints, an English demo banner and guide, and a working Three.js canvas. Refreshed the API and demo screenshots above.
+
+## Light and dark themes
+
+- Added a shared header theme switch for the dashboard and API guide. A saved preference survives navigation and reloads; system appearance is used before a preference is selected. Theme initialization runs before page paint and tolerates unavailable browser storage.
+- The light theme covers panels, forms, status badges, history, replay, timeline, inspector, documentation, and the Three.js outpost. Switching updates fog, lighting, base materials, and labels while preserving the current run and camera.
+- Verified light/dark switching, reload persistence, and cross-page preference sharing in the browser. Dashboard and guide stayed within a 390px viewport. Syntax checks, all 31 tests, and the Pages build passed, including delivery and packaging of both theme assets.
+- Preview: [light theme](light-theme.jpg).

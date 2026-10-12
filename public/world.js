@@ -9,6 +9,12 @@ const colors = [
   "#91cdb2",
   "#c8b892",
 ];
+const lightMaterials = {
+  "#1b3038": "#c5d2c7",
+  "#304b52": "#e0e8d5",
+  "#24383e": "#cbd7cc",
+  "#617575": "#839b90",
+};
 const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 const vector = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -59,7 +65,8 @@ export class AgentWorld {
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2("#101b20", 0.012);
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.1, 180);
-    this.scene.add(new THREE.HemisphereLight("#c8e7ef", "#283c35", 2.8));
+    this.hemi = new THREE.HemisphereLight("#c8e7ef", "#283c35", 2.8);
+    this.scene.add(this.hemi);
     const key = new THREE.DirectionalLight("#f2e9cf", 4);
     key.position.set(-6, 14, 8);
     key.castShadow = true;
@@ -81,7 +88,13 @@ export class AgentWorld {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.disposers = [];
-    this.buildBase(11);
+    this.light = document.documentElement.dataset.theme === "light";
+    this.themeChange = () => this.applyTheme();
+    window.addEventListener("relay:themechange", this.themeChange);
+    this.disposers.push(() =>
+      window.removeEventListener("relay:themechange", this.themeChange),
+    );
+    this.applyTheme();
     this.bindControls();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(host);
@@ -122,13 +135,34 @@ export class AgentWorld {
     this.labels.hidden = true;
   }
 
+  applyTheme() {
+    this.light = document.documentElement.dataset.theme === "light";
+    this.scene.fog.color.set(this.light ? "#e6efe2" : "#101b20");
+    this.hemi.groundColor.set(this.light ? "#adbfa4" : "#283c35");
+    this.renderer.toneMappingExposure = this.light ? 1.1 : 1.25;
+    this.dynamic.traverse((obj) => {
+      const materials = Array.isArray(obj.material)
+        ? obj.material
+        : [obj.material];
+      for (const material of materials) {
+        const original = material?.userData?.relayColor;
+        if (original)
+          material.color.set(this.light ? lightMaterials[original] : original);
+      }
+    });
+    this.buildBase(this.baseRadius || this.radius || 11);
+  }
+
   material(color, glow = false) {
-    return new THREE.MeshStandardMaterial({
-      color,
+    const material = new THREE.MeshStandardMaterial({
+      color:
+        this.light && lightMaterials[color] ? lightMaterials[color] : color,
       roughness: 0.58,
       metalness: 0.24,
       ...(glow ? { emissive: color, emissiveIntensity: 0.7 } : {}),
     });
+    if (lightMaterials[color]) material.userData.relayColor = color;
+    return material;
   }
   mesh(group, geometry, material, pos) {
     const obj = new THREE.Mesh(geometry, material);
@@ -188,8 +222,8 @@ export class AgentWorld {
     const grid = new THREE.GridHelper(
       radius * 1.55,
       Math.round(radius * 1.55),
-      "#53787a",
-      "#2b444b",
+      this.light ? "#789986" : "#53787a",
+      this.light ? "#a4bda5" : "#2b444b",
     );
     grid.position.y = -0.22;
     grid.material.transparent = true;
@@ -224,7 +258,7 @@ export class AgentWorld {
       new THREE.Points(
         geometry,
         new THREE.PointsMaterial({
-          color: "#84acae",
+          color: this.light ? "#648979" : "#84acae",
           size: 0.055,
           transparent: true,
           opacity: 0.65,

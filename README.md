@@ -6,6 +6,8 @@ A local workspace for watching agents communicate and replaying their work. Role
 
 The interface, API guide, documentation, and bundled examples use English by default. Agent messages and artifacts retain the content you submit.
 
+The dashboard and API guide support light and dark themes. Use the theme switch in the header; your preference is saved across pages and reloads. Before a preference is saved, the UI follows your system appearance.
+
 ## GitHub Pages preview
 
 **Live demo:** https://jiayi-liao.github.io/multi-agent-platform/ · **API guide:** https://jiayi-liao.github.io/multi-agent-platform/api.html

@@ -141,6 +141,8 @@ test("Pages builds at a repository subpath and publishes only explicit public as
   const files = await readdir(destination, { recursive: true });
   assert.ok(
     files.includes("api.html") &&
+      files.includes("theme.js") &&
+      files.includes("theme.css") &&
       files.includes("client.js") &&
       files.includes("vendor/three.core.js"),
   );

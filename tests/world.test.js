@@ -37,13 +37,18 @@ test("the local server delivers all Three.js modules under the self-only CSP", a
   const base = `http://127.0.0.1:${app.server.address().port}`;
   for (const path of [
     "/world.js",
+    "/theme.js",
+    "/theme.css",
     "/world-state.js",
     "/vendor/three.module.js",
     "/vendor/three.core.js",
   ]) {
     const res = await fetch(base + path);
     assert.equal(res.status, 200, path);
-    assert.match(res.headers.get("content-type"), /javascript/);
+    assert.match(
+      res.headers.get("content-type"),
+      path.endsWith(".css") ? /css/ : /javascript/,
+    );
     assert.match(
       res.headers.get("content-security-policy"),
       /script-src 'self'/,
