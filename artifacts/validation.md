@@ -60,3 +60,9 @@ This is a local MVP. It captures communication routed through its broker and act
 
 - At the user's explicit request, changed `Jiayi-Liao/multi-agent-platform` to public and enabled Actions-based Pages with `PAGES_ENABLED=true`.
 - Updated the canonical demo and API URLs to `https://jiayi-liao.github.io/multi-agent-platform/`, and changed the setup guide to anonymous HTTPS cloning. The earlier static-assets repository remains available as a historical preview.
+
+## English default
+
+- Translated the API guide, its navigation, endpoint descriptions, protocol explanations, SDK and curl comments, and page metadata to English. Set `lang="en"` and English UI date formatting. Documented English as the default in the README.
+- Checked project source, scripts, tests, documentation, and generated Pages assets for remaining Chinese text; none was found. Agent-provided content remains unchanged.
+- Syntax checks, all 31 existing tests, and the Pages build passed. Browser preview confirmed 14 documented HTTP endpoints, an English demo banner and guide, and a working Three.js canvas. Refreshed the API and demo screenshots above.

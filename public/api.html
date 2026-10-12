@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Relay · API & 接入指南</title>
+    <title>Relay · API & Integration Guide</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./api.css" />
   </head>
@@ -12,8 +12,8 @@
       <a class="docs-brand" href="./">↗ relay.</a>
       <nav>
         <a href="./">3D Demo</a><a href="#api">HTTP API</a
-        ><a href="#sdk">JavaScript SDK</a
-        ><a href="https://github.com/Jiayi-Liao/multi-agent-platform"
+        ><a href="#sdk">JavaScript SDK</a>
+        <a href="https://github.com/Jiayi-Liao/multi-agent-platform"
           >GitHub ↗</a
         >
       </nav>
@@ -23,29 +23,32 @@
         <div class="eyebrow">BUILD YOUR CREW / DEVELOPER GUIDE</div>
         <h1>Connect your crew<span>.</span></h1>
         <p>
-          让任何角色的 Agent 接入同一条通信与历史记录链路。<br />发送任务、确认收件、提交产物，再在
-          3D 场景中观察和回放。
+          Connect agents of any role through a shared communication and history
+          layer.<br />
+          Send tasks, acknowledge messages, and submit artifacts. Watch and
+          replay the work in 3D.
         </p>
         <div class="hero-tags">
-          <span>HTTP + JSON</span><span>SSE 实时事件</span
+          <span>HTTP + JSON</span><span>SSE live events</span
           ><span>JavaScript Client</span>
         </div>
       </section>
       <div class="docs-layout">
         <aside class="docs-toc">
-          <a href="#setup">01 本地启动</a><a href="#api">02 HTTP 接口</a
-          ><a href="#messages">03 通信协议</a><a href="#events">04 状态与产物</a
-          ><a href="#sdk">05 SDK 示例</a><a href="#stream">06 实时订阅</a>
+          <a href="#setup">01 Local setup</a><a href="#api">02 HTTP API</a>
+          <a href="#messages">03 Messaging protocol</a
+          ><a href="#events">04 Status & artifacts</a>
+          <a href="#sdk">05 SDK examples</a
+          ><a href="#stream">06 Live subscriptions</a>
         </aside>
         <div class="docs-content">
           <section id="setup">
             <div class="section-kicker">01 / START LOCALLY</div>
-            <h2>本地启动，连接真实 Agent</h2>
+            <h2>Run locally. Connect real agents.</h2>
             <p>
-              GitHub Pages
-              提供浏览器中的合成数据演示、历史浏览和回放。真实任务在本地 Node
-              服务中运行；Pages 页面本身没有 HTTP 后端，也不会调用你的 Codex
-              账户。
+              GitHub Pages provides synthetic browser demos, history browsing,
+              and replay. Real tasks run on your local Node server. The Pages
+              site has no HTTP backend and does not use your Codex account.
             </p>
             <pre><code>git clone https://github.com/Jiayi-Liao/multi-agent-platform.git
 cd multi-agent-platform
@@ -53,202 +56,225 @@ npm ci --ignore-scripts
 npm start
 # Dashboard & API: http://localhost:4310</code></pre>
             <p>
-              需要 Node.js 22.13 或更新版本。确定性演示不需要 API
-              key；真实模型演示需安装并登录 Codex CLI，用
-              <code>ENABLE_CODEX=1 npm start</code> 开启。
+              Requires Node.js 22.13 or newer. The deterministic demo needs no
+              API key. For the real model demo, install and sign in to Codex
+              CLI, then start with
+              <code>ENABLE_CODEX=1 npm start</code>.
             </p>
             <p>
-              源码仓库已公开，任何用户都可以克隆并启动本地服务。展示页可以直接浏览样例、回放，并下载
-              JavaScript client 模块。
+              The source repository is public, so anyone can clone it and start
+              the local server. The demo site lets you browse samples, replay
+              runs, and download the JavaScript client module.
             </p>
             <div class="callout">
-              <strong>接口的当前开放范围</strong>
+              <strong>Current API access</strong>
               <p>
-                HTTP API 只监听 <code>127.0.0.1</code>。适用于本机
-                Agent、脚本和运行时适配器；目前没有公网托管
-                API、账号系统或鉴权。Agent ID
-                是路由标识。浏览器写请求必须来自本地服务同源页面。
+                The HTTP API listens only on <code>127.0.0.1</code> for local
+                agents, scripts, and runtime adapters. There is currently no
+                hosted public API, account system, or authentication. Agent IDs
+                are routing identifiers. Browser write requests must come from
+                the same origin as the local server.
               </p>
             </div>
           </section>
           <section id="api">
             <div class="section-kicker">02 / HTTP CONTRACT</div>
-            <h2>当前可用的 HTTP 接口</h2>
+            <h2>Available HTTP endpoints</h2>
             <p>
-              Base URL：<code>http://localhost:4310</code>。下表中
-              <code>R = /api/runs/:runId</code>；POST 使用
-              <code>Content-Type: application/json</code>，单次请求体上限
-              128,000 bytes。
+              Base URL: <code>http://localhost:4310</code>. In this table,
+              <code>R = /api/runs/:runId</code>. POST requests require
+              <code>Content-Type: application/json</code> and a request body of
+              at most 128,000 bytes.
             </p>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>方法与路径</th>
-                    <th>用途 / 请求字段</th>
+                    <th>Method & path</th>
+                    <th>Purpose / request fields</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td><b>GET</b> <code>/api/config</code></td>
-                    <td>查看是否启用 Codex：<code>{ enableCodex }</code>。</td>
+                    <td>
+                      Check whether Codex is enabled:
+                      <code>{ enableCodex }</code>.
+                    </td>
                   </tr>
                   <tr>
                     <td><b>GET</b> <code>/api/runs</code></td>
-                    <td>列出任务，包含状态、Agent 数和事件数。</td>
+                    <td>
+                      List runs with their status, agent count, and event count.
+                    </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>/api/runs</code></td>
                     <td>
-                      创建任务：<code>{ title, mode? }</code>。默认
-                      <code>custom</code>；创建后返回 run，包括
-                      <code>id</code>。
+                      Create a run: <code>{ title, mode? }</code>. The default
+                      mode is <code>custom</code>. Returns the run, including
+                      its <code>id</code>.
                     </td>
                   </tr>
                   <tr>
                     <td><b>GET</b> <code>R</code></td>
                     <td>
-                      读取任务与有序历史事件：<code>{ run, events }</code>。
+                      Read a run and its ordered event history:
+                      <code>{ run, events }</code>.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/agents</code></td>
                     <td>
-                      注册任意角色：<code>{ id?, name, role, parentId? }</code
-                      >。父 Agent 必须已存在于当前任务。
+                      Register any role:
+                      <code>{ id?, name, role, parentId? }</code>. The parent
+                      agent must already exist in this run.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/messages</code></td>
                     <td>
-                      发送消息或回复：<code
+                      Send a message or reply:
+                      <code
                         >{ fromAgentId, toAgentId, content, id?,
                         conversationId?, replyTo?, kind?, expectsResponse?
                         }</code
-                      >。
+                      >.
                     </td>
                   </tr>
                   <tr>
                     <td><b>GET</b> <code>R/agents/:agentId/inbox</code></td>
                     <td>
-                      读取未处理收件箱。<code>?limit=25</code>，范围
-                      1–100；按最早消息优先。
+                      Read outstanding messages, oldest first. Use
+                      <code>?limit=25</code>; the allowed range is 1–100.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/messages/:messageId/ack</code></td>
-                    <td>由接收方确认：<code>{ actorId, state }</code>。</td>
+                    <td>
+                      Acknowledge as the recipient:
+                      <code>{ actorId, state }</code>.
+                    </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/events</code></td>
                     <td>
-                      上报状态、工具与产物：<code>{ type, payload }</code
-                      >；支持的事件见下节。
+                      Record status, tools, and artifacts:
+                      <code>{ type, payload }</code>. Supported event types are
+                      listed below.
                     </td>
                   </tr>
                   <tr>
                     <td><b>GET</b> <code>R/stream</code></td>
                     <td>
-                      SSE 实时事件。<code>?after=:seq</code> 补发历史；重连支持
-                      <code>Last-Event-ID</code>。
+                      Stream live events over SSE.
+                      <code>?after=:seq</code> replays missed events; reconnects
+                      also support <code>Last-Event-ID</code>.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/finish</code></td>
                     <td>
-                      结束任务：<code>{ status?, error? }</code>。状态为
-                      <code>completed</code>（默认）、<code>failed</code> 或
-                      <code>cancelled</code>。若要中断平台拥有的演示进程，使用
-                      cancel。
+                      Finish a run: <code>{ status?, error? }</code>. Status can
+                      be <code>completed</code> (default), <code>failed</code>,
+                      or <code>cancelled</code>. Use cancel to interrupt a
+                      platform-owned demo process.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>R/cancel</code></td>
                     <td>
-                      取消任务，并中断平台拥有的演示进程：<code>{}</code>。外部
-                      Agent 的进程需要其适配器自行停止。
+                      Cancel a run and interrupt platform-owned demo processes:
+                      <code>{}</code>. External agent processes must be stopped
+                      by their own adapters.
                     </td>
                   </tr>
                   <tr>
                     <td><b>GET</b> <code>R/export</code></td>
                     <td>
-                      下载 JSON：<code>{ version: 1, run, events }</code>。
+                      Download JSON: <code>{ version: 1, run, events }</code>.
                     </td>
                   </tr>
                   <tr>
                     <td><b>POST</b> <code>/api/demo</code></td>
                     <td>
-                      启动重写 / 验证演示：<code
-                        >{ mode: "deterministic" | "codex" }</code
-                      >；默认确定性模式，Codex 需显式启用。
+                      Launch the rewriter/verifier demo:
+                      <code>{ mode: "deterministic" | "codex" }</code>. Defaults
+                      to deterministic mode; Codex must be explicitly enabled.
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p>
-              常见错误返回 <code>{ error: "..." }</code>：400 参数错误，403
-              同源或确认方不符，404 对象不存在，409 状态 / 幂等冲突，413
-              请求体过大，415 Content-Type 错误，429 同时运行的演示超过 3 个。
+              Errors return <code>{ error: "..." }</code>: 400 invalid input;
+              403 origin or acknowledgment actor mismatch; 404 object not found;
+              409 state or idempotency conflict; 413 request body too large; 415
+              unsupported Content-Type; 429 more than three demos running
+              concurrently.
             </p>
           </section>
           <section id="messages">
             <div class="section-kicker">03 / MAILBOX & CORRELATION</div>
-            <h2>从一个任务消息开始</h2>
+            <h2>Start with a task message</h2>
             <pre><code>curl -X POST http://localhost:4310/api/runs \
   -H 'Content-Type: application/json' \
   -d '{"title":"Research review"}'
 
-# 用返回的 id 替换 RUN_ID，并先注册 planner 与 researcher。
+# Replace RUN_ID with the returned id; register planner and researcher first.
 curl -X POST http://localhost:4310/api/runs/RUN_ID/messages \
   -H 'Content-Type: application/json' \
   -d '{"id":"request-1","conversationId":"review-1",
        "fromAgentId":"planner","toAgentId":"researcher",
        "content":"Find relevant papers.","expectsResponse":true}'</code></pre>
             <div class="protocol-flow">
-              <span>queued</span><i>→</i><span>delivered</span><i>→</i
-              ><span>processing</span><i>→</i><span>answered</span>
+              <span>queued</span><i>→</i><span>delivered</span><i>→</i>
+              <span>processing</span><i>→</i><span>answered</span>
             </div>
             <p>
-              接收方用 ACK 标记
-              <code>delivered</code>、<code>processing</code>；<code
-                >failed</code
-              >
-              为终止状态。需要回复的请求（<code>expectsResponse=true</code>，默认值）必须用同一
-              <code>conversationId</code>、原消息 <code>replyTo</code> 且发送 /
-              接收方对调的新消息回答，系统会自动将原请求标记
-              answered。无需回复的消息可由接收方 ACK answered。
+              The recipient acknowledges <code>delivered</code> and
+              <code>processing</code>. <code>failed</code> is terminal. Requests
+              that expect a reply (<code>expectsResponse=true</code>, the
+              default) require a new message with the same
+              <code>conversationId</code>, the original message ID as
+              <code>replyTo</code>, and the sender and recipient reversed. The
+              server automatically marks the original request
+              <code>answered</code>. Messages that do not expect a reply can be
+              acknowledged as <code>answered</code> by the recipient.
             </p>
             <p>
-              <code>kind</code> 支持
-              <code>chat</code
-              >、<code>task_request</code>、<code>task_result</code>、<code>feedback</code>、<code>error</code>。消息内容上限
-              32,000 字符；ID 和 conversationId 上限 100 字符。
+              <code>kind</code> supports <code>chat</code>,
+              <code>task_request</code>, <code>task_result</code>,
+              <code>feedback</code>, and <code>error</code>. Message content is
+              limited to 32,000 characters; IDs and conversation IDs are limited
+              to 100 characters.
             </p>
             <p>
-              重试时复用显式 <code>id</code> 和
-              <code>conversationId</code>：相同内容幂等返回，冲突内容返回
-              409。一个 conversation
-              只属于同一任务中的两个参与者。成功完成任务前必须处理完待回复请求与正在运行的工具；结束后任务只读。
+              Reuse explicit <code>id</code> and
+              <code>conversationId</code> values when retrying. Identical
+              messages are idempotent; conflicting content returns 409. A
+              conversation belongs to two participants within a single run.
+              Resolve all outstanding replies and running tools before
+              completing a run successfully. Finished runs are read-only.
             </p>
           </section>
           <section id="events">
             <div class="section-kicker">04 / OBSERVABILITY</div>
-            <h2>Agent 状态、工具与产物</h2>
+            <h2>Agent status, tools, and artifacts</h2>
             <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>事件类型</th>
-                    <th>payload</th>
+                    <th>Event type</th>
+                    <th>Payload</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td><code>agent.status</code></td>
                     <td>
-                      <code>{ agentId, status, activity? }</code><br />idle /
-                      working / waiting / completed / failed
+                      <code>{ agentId, status, activity? }</code><br />
+                      idle / working / waiting / completed / failed
                     </td>
                   </tr>
                   <tr>
@@ -258,34 +284,41 @@ curl -X POST http://localhost:4310/api/runs/RUN_ID/messages \
                   <tr>
                     <td><code>tool.completed</code></td>
                     <td>
-                      <code>{ id, agentId, output?, error? }</code
-                      ><br />工具必须由当前 Agent 启动且仍在运行。
+                      <code>{ id, agentId, output?, error? }</code><br />
+                      The tool must have been started by this agent and still be
+                      running.
                     </td>
                   </tr>
                   <tr>
                     <td><code>artifact.created</code></td>
                     <td>
                       <code>{ agentId, name, content, id?, version? }</code
-                      ><br />版本为正整数；content 上限 32,000 字符。
+                      ><br />
+                      Versions are positive integers; content is limited to
+                      32,000 characters.
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p>
-              消息和任务生命周期事件由服务生成。<code>runtime.activity</code>
-              由内置 CLI 适配器内部记录，当前没有开放通过 HTTP 任意写入该类型。
+              The server generates message and run lifecycle events. The
+              built-in CLI adapter records
+              <code>runtime.activity</code> internally; this type cannot
+              currently be written through the public HTTP API.
             </p>
           </section>
           <section id="sdk">
             <div class="section-kicker">05 / JAVASCRIPT CLIENT</div>
-            <h2>用九个方法连接自己的 Agent</h2>
+            <h2>Connect your agents with nine methods</h2>
             <p>
-              项目提供
-              <code>PlatformClient</code
-              >：<code>createRun</code>、<code>register</code>、<code>send</code>、<code>reply</code>、<code>inbox</code>、<code>ack</code>、<code>status</code>、<code>record</code>、<code>finish</code>。它是一个源码模块，目前没有单独发布
-              npm 包。<a href="./client.js" download="relay-client.js"
-                >下载 client.js ↓</a
+              The project provides <code>PlatformClient</code>:
+              <code>createRun</code>, <code>register</code>, <code>send</code>,
+              <code>reply</code>, <code>inbox</code>, <code>ack</code>,
+              <code>status</code>, <code>record</code>, and <code>finish</code>.
+              It is a source module, currently not a separate npm package.
+              <a href="./client.js" download="relay-client.js"
+                >Download client.js ↓</a
               >
             </p>
             <pre><code>import { PlatformClient } from './src/client.js';
@@ -299,11 +332,11 @@ await researcher.register({ name: 'Researcher', role: 'research', parentId: 'pla
 const request = await planner.send('researcher', 'Find relevant papers.', {
   id: 'request-1', conversationId: 'review-1'
 });
-// 外部 worker 用 researcher.inbox() 轮询待处理消息。
+// External workers poll researcher.inbox() for outstanding messages.
 await researcher.ack(request.id, 'delivered');
 await researcher.ack(request.id, 'processing');
 await researcher.status('working', 'Reviewing papers');
-// 在这里调用你自己的 Agent 运行时。
+// Call your own agent runtime here.
 const result = await researcher.reply(request, 'Here is the research summary.');
 await planner.ack(result.id, 'delivered');
 await planner.ack(result.id, 'answered');
@@ -312,24 +345,27 @@ await researcher.record('artifact.created', {
 });
 await planner.finish();</code></pre>
             <p>
-              任何运行时都可使用 HTTP 接入。当前没有 MCP
-              服务，也不会自动截获任意 Codex Desktop 对话或原生子 Agent
-              消息；通信需经此 broker 或由适配器上报。
+              Any runtime can connect over HTTP. There is currently no MCP
+              server or automatic capture of arbitrary Codex Desktop
+              conversations or native subagent messages. Route communication
+              through this broker or report events through an adapter.
             </p>
           </section>
           <section id="stream">
             <div class="section-kicker">06 / LIVE EVENTS & REPLAY</div>
-            <h2>实时订阅，保留完整历史</h2>
+            <h2>Subscribe live. Keep the full history.</h2>
             <pre><code>curl -N 'http://localhost:4310/api/runs/RUN_ID/stream?after=0'
 
-# SSE 每条事件：
+# Each SSE event:
 # id: 42
 # data: {"seq":42,"id":"...","runId":"...",
 #        "type":"message.sent","timestamp":...,"payload":{...}}</code></pre>
             <p>
-              事件的 <code>seq</code> 是数据库中的全局有序游标；ID 与 timestamp
-              同时保留。重连传入最后看到的 seq 即可补发。UI
-              使用相同事件投影重建任意历史时刻，回放不会重新执行模型或工具。
+              Each event's <code>seq</code> is a globally ordered database
+              cursor; event IDs and timestamps are also retained. Reconnect with
+              the last seen sequence to receive missed events. The UI uses the
+              same event projection to reconstruct any point in history. Replay
+              does not rerun models or tools.
             </p>
           </section>
         </div>
@@ -337,8 +373,8 @@ await planner.finish();</code></pre>
     </main>
     <footer>
       <span>RELAY / OPEN INTERFACES</span
-      ><a href="./">Explore the agent outpost ↗</a
-      ><span>LOCAL RUNTIME · DURABLE HISTORY</span>
+      ><a href="./">Explore the agent outpost ↗</a>
+      <span>LOCAL RUNTIME · DURABLE HISTORY</span>
     </footer>
   </body>
 </html>

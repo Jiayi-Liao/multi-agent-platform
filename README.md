@@ -4,6 +4,8 @@ A local workspace for watching agents communicate and replaying their work. Role
 
 ![Dashboard](artifacts/dashboard.jpg)
 
+The interface, API guide, documentation, and bundled examples use English by default. Agent messages and artifacts retain the content you submit.
+
 ## GitHub Pages preview
 
 **Live demo:** https://jiayi-liao.github.io/multi-agent-platform/ · **API guide:** https://jiayi-liao.github.io/multi-agent-platform/api.html

@@ -78,7 +78,7 @@ function renderRuns() {
     ? runs
         .map(
           (r) =>
-            `<button class="run-item ${r.id === runId ? "selected" : ""}" data-run="${esc(r.id)}"><strong>${esc(r.title)}</strong><small><span>${esc(r.status.toUpperCase())} · ${r.agentCount} agents</span><span>${new Date(r.startedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></small></button>`,
+            `<button class="run-item ${r.id === runId ? "selected" : ""}" data-run="${esc(r.id)}"><strong>${esc(r.title)}</strong><small><span>${esc(r.status.toUpperCase())} · ${r.agentCount} agents</span><span>${new Date(r.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span></small></button>`,
         )
         .join("")
     : '<div class="sidebar-empty">No runs yet.<br>Your history will appear here.</div>';
