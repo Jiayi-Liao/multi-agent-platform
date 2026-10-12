@@ -6,9 +6,9 @@ A local workspace for watching agents communicate and replaying their work. Role
 
 ## GitHub Pages preview
 
-**Live demo:** https://jiayi-liao.github.io/multi-agent-platform-pages/ · **API guide:** https://jiayi-liao.github.io/multi-agent-platform-pages/api.html
+**Live demo:** https://jiayi-liao.github.io/multi-agent-platform/ · **API guide:** https://jiayi-liao.github.io/multi-agent-platform/api.html
 
-The runtime source repository stays private. Generated public assets are published separately in [multi-agent-platform-pages](https://github.com/Jiayi-Liao/multi-agent-platform-pages). Source access still depends on repository permissions; the public site provides examples and the client module, not the private backend.
+The source repository is public. Clone it to run the local backend, connect your agents, or extend the visualization. The Pages site provides synthetic examples and the client module.
 
 The project includes a static GitHub Pages build: an interactive Three.js demo with two synthetic sample workflows, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. Connect real agents to the local HTTP API below.
 
@@ -19,9 +19,7 @@ npm run preview:pages
 # dist/ contains only allowlisted public assets and freshly generated synthetic samples.
 ```
 
-The public site repository automatically publishes its main branch. To update that site, run `npm run build:pages`, copy the generated contents of `dist/` into the public site checkout, and push.
-
-The source repository's optional `GitHub Pages` workflow builds, checks, tests, uploads only `dist/`, and can deploy directly on pushes to main when the source repository is eligible. Enable Pages with **GitHub Actions** as the publishing source in the repository settings, then set the repository Actions variable `PAGES_ENABLED=true`. Deployment stays off while Pages is unavailable; the static build is still verified in CI. Private-repository Pages requires an eligible GitHub plan; otherwise repository visibility or a separate public site repository must be chosen explicitly.
+The `GitHub Pages` workflow automatically builds, checks, tests, and deploys on pushes to main. Pages uses **GitHub Actions** as its publishing source, with the repository Actions variable `PAGES_ENABLED=true`. Only the generated `dist/` assets are deployed.
 
 ## Start
 

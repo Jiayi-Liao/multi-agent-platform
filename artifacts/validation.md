@@ -55,3 +55,8 @@ This is a local MVP. It captures communication routed through its broker and act
 - Public deployment `38211154247` succeeded. Verified the live site at `https://jiayi-liao.github.io/multi-agent-platform-pages/` and its API guide.
 
 - Verified public demo and API guide at a 390px viewport with no document-level horizontal overflow. Downloaded `client.js` through the public guide, and confirmed the updated local dashboard still reconnects to its real SSE stream and original saved Codex history. Screenshots: [public demo](pages-demo.jpg), [API guide](pages-api.jpg).
+
+## Public source repository
+
+- At the user's explicit request, changed `Jiayi-Liao/multi-agent-platform` to public and enabled Actions-based Pages with `PAGES_ENABLED=true`.
+- Updated the canonical demo and API URLs to `https://jiayi-liao.github.io/multi-agent-platform/`, and changed the setup guide to anonymous HTTPS cloning. The earlier static-assets repository remains available as a historical preview.
