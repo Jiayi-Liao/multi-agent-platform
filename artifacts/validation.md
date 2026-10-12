@@ -2,7 +2,7 @@
 
 ## Automated
 
-`npm run check` passes. `npm test` passes **26 tests**, including protocol invariants, replay projections, persistence, atomic run creation, HTTP/SSE behavior, cancellation, the CLI adapter's success/error/timeout paths, stable arbitrary-role 3D placement, recorded packet timing, and local delivery of all Three.js modules. Local environment: Node 23.11.0, macOS. CI is configured for Node 22 and 24.
+`npm run check` passes. `npm test` passes **31 tests**, including protocol invariants, replay projections, persistence, atomic run creation, HTTP/SSE behavior, cancellation, the CLI adapter's success/error/timeout paths, stable arbitrary-role 3D placement, recorded packet timing, and local delivery of all Three.js modules. Local environment: Node 23.11.0, macOS. CI is configured for Node 22 and 24.
 
 ## Real Codex integration
 
@@ -40,3 +40,18 @@ Screenshots: [desktop](dashboard.jpg), [mobile](mobile.jpg). Full synthetic expo
 ## Boundaries
 
 This is a local MVP. It captures communication routed through its broker and activity emitted by adapters. It does not automatically import existing Codex desktop subagent sessions. Replay reconstructs recorded state and does not rerun models. Worker resumption, multi-user authentication, MCP, pagination, and checkpoints are future work.
+
+## GitHub Pages and API reference
+
+- The optional static build copies only named frontend/client assets, licenses and generated synthetic samples. It never reads `.runtime`, CLI traces, credentials or personal histories.
+- Two sample workflows cover rewriter/verifier and planner/researcher/editor roles. Browser simulation progressively records sends and ACKs; replay and export use the same projection as the real dashboard.
+- Static demo tests cover partial versus completed state, event sequencing, read-only behavior, Codex rejection, timer cleanup, and repository-subpath asset delivery.
+- Browser preview at `/multi-agent-platform/` loaded Three.js successfully; a simulated mission reached 55 events and 7 messages. Rewinding produced an empty crew, and one step showed only Coordinator. The alternate role sample and API guide were accessible.
+- The API reference documents all 14 current HTTP method/path combinations, supported event types, mailbox rules, local-only scope, SSE and nine JavaScript client methods.
+- GitHub rejected Pages enablement for the private source repository with HTTP 422: “Your current plan does not support GitHub Pages for this repository.” Deployment is gated by `PAGES_ENABLED=true`; builds/tests can pass while repository publishing scope is being decided.
+
+- Preserved the private source repository and created a dedicated public static-assets repository, `Jiayi-Liao/multi-agent-platform-pages`. GitHub accepted Pages enablement for that repository with HTTPS enforced. Generated assets are published from its main branch.
+
+- Public deployment `38211154247` succeeded. Verified the live site at `https://jiayi-liao.github.io/multi-agent-platform-pages/` and its API guide.
+
+- Verified public demo and API guide at a 390px viewport with no document-level horizontal overflow. Downloaded `client.js` through the public guide, and confirmed the updated local dashboard still reconnects to its real SSE stream and original saved Codex history. Screenshots: [public demo](pages-demo.jpg), [API guide](pages-api.jpg).

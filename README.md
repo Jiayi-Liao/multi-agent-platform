@@ -4,6 +4,25 @@ A local workspace for watching agents communicate and replaying their work. Role
 
 ![Dashboard](artifacts/dashboard.jpg)
 
+## GitHub Pages preview
+
+**Live demo:** https://jiayi-liao.github.io/multi-agent-platform-pages/ · **API guide:** https://jiayi-liao.github.io/multi-agent-platform-pages/api.html
+
+The runtime source repository stays private. Generated public assets are published separately in [multi-agent-platform-pages](https://github.com/Jiayi-Liao/multi-agent-platform-pages). Source access still depends on repository permissions; the public site provides examples and the client module, not the private backend.
+
+The project includes a static GitHub Pages build: an interactive Three.js demo with two synthetic sample workflows, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. Connect real agents to the local HTTP API below.
+
+```sh
+npm run build:pages
+npm run preview:pages
+# Preview: http://localhost:4311/multi-agent-platform/
+# dist/ contains only allowlisted public assets and freshly generated synthetic samples.
+```
+
+The public site repository automatically publishes its main branch. To update that site, run `npm run build:pages`, copy the generated contents of `dist/` into the public site checkout, and push.
+
+The source repository's optional `GitHub Pages` workflow builds, checks, tests, uploads only `dist/`, and can deploy directly on pushes to main when the source repository is eligible. Enable Pages with **GitHub Actions** as the publishing source in the repository settings, then set the repository Actions variable `PAGES_ENABLED=true`. Deployment stays off while Pages is unavailable; the static build is still verified in CI. Private-repository Pages requires an eligible GitHub plan; otherwise repository visibility or a separate public site repository must be chosen explicitly.
+
 ## Start
 
 Requires **Node.js 22.13 or newer**. No API keys are needed for the deterministic demo.
@@ -83,10 +102,11 @@ Poll `client.inbox()` from an external worker to receive outstanding messages; a
 
 ## API
 
-All endpoints are local, run-scoped, and use JSON. A run is the communication namespace. A conversation belongs to two participants inside that run.
+The HTTP API is available at **http://localhost:4310**. It is a local API, not an internet-hosted service. POST requests require `Content-Type: application/json` and at most 128,000 bytes. Run endpoints are run-scoped and use JSON. The [browser API guide](public/api.html) also covers the JavaScript client and SSE subscriptions. A run is the communication namespace. A conversation belongs to two participants inside that run.
 
 | Method     | Endpoint                                   | Purpose                                                                                                           |
 | ---------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| GET        | `/api/config`                              | Whether the server allows Codex CLI demos (`enableCodex`)                                                         |
 | GET / POST | `/api/runs`                                | List / create runs (`title`, optional `mode`)                                                                     |
 | GET        | `/api/runs/:runId`                         | Run and ordered events                                                                                            |
 | POST       | `/api/runs/:runId/agents`                  | Register `id`, `name`, `role`, optional `parentId`                                                                |
@@ -95,7 +115,7 @@ All endpoints are local, run-scoped, and use JSON. A run is the communication na
 | POST       | `/api/runs/:runId/messages/:messageId/ack` | Recipient `actorId` and delivery `state`                                                                          |
 | POST       | `/api/runs/:runId/events`                  | Record `type` and `payload` for status, tools, artifacts                                                          |
 | GET        | `/api/runs/:runId/stream?after=:seq`       | SSE backlog and live events; honors `Last-Event-ID` on reconnect                                                  |
-| POST       | `/api/runs/:runId/finish`                  | Finish with `status=completed` or `failed`                                                                        |
+| POST       | `/api/runs/:runId/finish`                  | Finish with `status=completed` (default), `failed`, or `cancelled`; optional `error`                              |
 | POST       | `/api/runs/:runId/cancel`                  | Stop the owned demo and mark the run cancelled                                                                    |
 | GET        | `/api/runs/:runId/export`                  | Download recorded run JSON                                                                                        |
 | POST       | `/api/demo`                                | Start `mode=deterministic` or opt-in `codex`                                                                      |
@@ -127,7 +147,7 @@ Shared pure state projection
 Three.js world / agent timeline / inspector / replay
 ```
 
-`src/store.js` owns protocol validation and transactional persistence. `src/state.js` projects recorded events and is shared directly by the server and browser. `src/codex.js` adapts real CLI turns. `src/client.js` is runtime-neutral. The frontend uses browser ES modules and Three.js 0.186.1, installed through npm and served locally. No build step, CDN, external assets, or framework is required. `public/world.js` renders the scene; `src/world-state.js` owns stable agent slots and recorded send timing. Graphics resources are disposed on scene changes, pixel density is capped, offscreen rendering pauses, and reduced-motion preferences are respected.
+`src/store.js` owns protocol validation and transactional persistence. `src/state.js` projects recorded events and is shared directly by the server and browser. `src/codex.js` adapts real CLI turns. `src/client.js` is runtime-neutral. The frontend uses browser ES modules and Three.js 0.186.1, installed through npm and served locally. The local app needs no build step, CDN, external assets, or framework. The optional Pages build rewrites module/asset paths for a repository subdirectory and switches to a synthetic browser transport. `public/world.js` renders the scene; `src/world-state.js` owns stable agent slots and recorded send timing. Graphics resources are disposed on scene changes, pixel density is capped, offscreen rendering pauses, and reduced-motion preferences are respected.
 
 Three.js setup and resizing follow the [official installation guide](https://threejs.org/manual/pages/installation.html) and [responsive canvas guide](https://threejs.org/manual/pages/responsive.html).
 

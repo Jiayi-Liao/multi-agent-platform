@@ -1,5 +1,8 @@
 import { project, terminalMessages } from "/state.js";
 import { AgentWorld } from "/world.js";
+import { createTransport } from "/transport.js";
+const transport = await createTransport(project);
+const staticDemo = transport.staticDemo;
 const $ = (id) => document.getElementById(id);
 const esc = (value) =>
   String(value ?? "").replace(
@@ -33,21 +36,7 @@ let selection = null,
   connected = false,
   toastTimer,
   refreshTimer;
-async function api(path, data) {
-  const res = await fetch(
-    path,
-    data === undefined
-      ? {}
-      : {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        },
-  );
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.error || "Request failed.");
-  return result;
-}
+const api = (path, data) => transport.request(path, data);
 const act =
   (fn) =>
   async (...args) => {
@@ -112,12 +101,15 @@ async function selectRun(id) {
   localStorage.setItem("relay-run", id);
   renderRuns();
   render();
-  source = new EventSource(
-    `/api/runs/${id}/stream?after=${events.at(-1)?.seq || 0}`,
-  );
+  source = transport.subscribe(id, events.at(-1)?.seq || 0);
   source.onopen = () => {
     if (token === generation) {
-      connection("Event stream connected", true);
+      connection(
+        staticDemo
+          ? "Browser demo · synthetic events"
+          : "Event stream connected",
+        true,
+      );
       renderInspector();
     }
   };
@@ -161,10 +153,16 @@ function render() {
     (events[cursor]?.timestamp || firstTime()) - firstTime(),
   );
   $("stat-events").textContent = `${cursor + 1} recorded events`;
-  $("view-mode").textContent = live ? "● LIVE" : "◷ REPLAY";
+  $("view-mode").textContent = live
+    ? staticDemo
+      ? "● DEMO"
+      : "● LIVE"
+    : "◷ REPLAY";
   $("view-mode").className = `live-tag ${live ? "" : "replay"}`;
   $("replay-label").textContent = live
-    ? "Following live events"
+    ? staticDemo
+      ? "Following synthetic events"
+      : "Following live events"
     : playing
       ? "Playing recorded history"
       : "Paused in history";
@@ -177,14 +175,14 @@ function render() {
     "aria-label",
     playing ? "Pause replay" : "Play replay",
   );
-  $("cancel").hidden = !live || run.status !== "running";
+  $("cancel").hidden = staticDemo || !live || run.status !== "running";
   $("finish").hidden =
     !live || run.status !== "running" || run.mode !== "custom";
   $("finish").disabled =
     messages.some(
       (m) => m.expectsResponse && !terminalMessages.has(m.status),
     ) || state.tools.some((t) => t.status === "running");
-  $("add-agent").disabled = !live || run.status !== "running";
+  $("add-agent").disabled = staticDemo || !live || run.status !== "running";
   renderGraph();
   renderTimeline();
   renderInspector();
@@ -342,7 +340,7 @@ function renderTimeline() {
     : '<p class="no-events">No events match this view.</p>';
 }
 function compose(agentId, original = null) {
-  if (!live || state.run.status !== "running") return "";
+  if (staticDemo || !live || state.run.status !== "running") return "";
   const peers = Object.values(state.agents).filter((a) => a.id !== agentId);
   if (!peers.length)
     return '<p class="inspector-intro">Add another agent to exchange messages.</p>';
@@ -371,7 +369,7 @@ function renderInspector() {
   }
   const event = visibleEvents().find((e) => e.id === selection?.eventId);
   if (!event) {
-    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>Select an agent to explore its history.<br>Select a message to follow its conversation.<br>Move through playback to inspect an earlier state.</div><div class="detail-label">Run summary</div><div class="detail-meta">${esc(state.run.mode)} runtime<br>${events.length} events saved locally<br>${connected ? "Live event stream connected" : "Connecting to event stream"}</div>${state.run.error ? `<div class="detail-label">Run stopped</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">Artifacts at this point</div>${state.artifacts.map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong><p>${esc(a.content)}</p></div>`).join("")}`;
+    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>Select an agent to explore its history.<br>Select a message to follow its conversation.<br>Move through playback to inspect an earlier state.</div><div class="detail-label">Run summary</div><div class="detail-meta">${esc(state.run.mode)} runtime<br>${events.length} ${staticDemo ? "synthetic events in browser" : "events saved locally"}<br>${connected ? (staticDemo ? "Synthetic browser stream connected" : "Live event stream connected") : "Connecting to event stream"}</div>${state.run.error ? `<div class="detail-label">Run stopped</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">Artifacts at this point</div>${state.artifacts.map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong><p>${esc(a.content)}</p></div>`).join("")}`;
     return;
   }
   const p = event.payload,
@@ -386,7 +384,10 @@ function renderInspector() {
       (x) => x.conversationId === m.conversationId,
     );
     const canAck =
-      live && state.run.status === "running" && !terminalMessages.has(m.status);
+      !staticDemo &&
+      live &&
+      state.run.status === "running" &&
+      !terminalMessages.has(m.status);
     el.innerHTML = `<div class="eyebrow">COMMUNICATION</div><h4>${esc(name(m.fromAgentId))} → ${esc(name(m.toAgentId))}</h4><span class="detail-tag">${esc(m.kind)} · ${esc(m.status)}</span><div class="detail-label">Message</div><div class="detail-body">${esc(m.content)}</div><div class="detail-label">Correlation</div><div class="detail-meta">Message: ${esc(m.id)}<br>Conversation: ${esc(m.conversationId)}<br>Reply to: ${esc(m.replyTo || "Conversation start")}</div><div class="detail-label">Delivery history</div><div class="ack-row"><span>queued</span><span>${duration(m.timestamp - firstTime())}</span></div>${m.acknowledgements.map((a) => `<div class="ack-row"><span>${esc(a.state)}</span><span>${duration(a.timestamp - firstTime())}</span></div>`).join("")}${canAck ? `<div class="detail-label">Recipient actions</div>${m.status === "queued" ? `<button class="quiet" data-ack="delivered" data-message="${esc(m.id)}">Mark delivered</button>` : ""}${m.status === "delivered" ? `<button class="quiet" data-ack="processing" data-message="${esc(m.id)}">Mark processing</button>` : ""}${!m.expectsResponse && m.status !== "queued" ? `<button class="quiet" data-ack="answered" data-message="${esc(m.id)}">Mark handled</button>` : ""}<button class="quiet danger" data-ack="failed" data-message="${esc(m.id)}">Mark failed</button>` : ""}<div class="detail-label">Conversation · ${thread.length} messages</div>${thread.map((x) => `<button class="conversation-button" data-message-event="${esc(x.id)}"><strong>${esc(name(x.fromAgentId))} → ${esc(name(x.toAgentId))}</strong><br>${esc(x.content.slice(0, 200))}</button>`).join("")}${m.status !== "failed" ? compose(m.toAgentId, m) : ""}`;
     return;
   }
@@ -526,7 +527,10 @@ async function launchDemo() {
 }
 $("start-demo").onclick = act(launchDemo);
 $("empty-demo").onclick = act(launchDemo);
-$("new-run").onclick = () => $("run-dialog").showModal();
+$("new-run").onclick = () =>
+  staticDemo
+    ? window.location.assign("./api.html#setup")
+    : $("run-dialog").showModal();
 $("run-form").onsubmit = act(async (e) => {
   e.preventDefault();
   const form = new FormData(e.target);
@@ -583,8 +587,21 @@ document.addEventListener(
     toast("Message recorded and queued for the recipient.");
   }),
 );
-$("export").onclick = () =>
-  (window.location.href = `/api/runs/${runId}/export`);
+$("export").onclick = act(async () => {
+  if (!staticDemo) {
+    window.location.href = `/api/runs/${runId}/export`;
+    return;
+  }
+  const data = await api(`/api/runs/${runId}/export`);
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+  );
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `synthetic-run-${runId}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 $("finish").onclick = act(async () => {
   await api(`/api/runs/${runId}/finish`, { status: "completed" });
   toast("Run complete. Its history is ready for replay.");
@@ -596,6 +613,7 @@ $("cancel").onclick = act(async () => {
 window.addEventListener("beforeunload", () => {
   source?.close();
   world?.dispose();
+  transport.close();
 });
 // Discover runs launched by CLI/adapters, including while the selected run is quiet.
 setInterval(() => {
@@ -603,6 +621,22 @@ setInterval(() => {
     refreshRuns().catch(() => connection("Server unavailable"));
 }, 5000);
 await act(async () => {
+  if (staticDemo) {
+    $("new-run").textContent = "API & local setup ↗";
+    $("demo-mode").querySelector('[value="codex"]').remove();
+    $("demo-mode").querySelector("option").textContent =
+      "Synthetic browser demo";
+    document.querySelector(".workspace-label span").textContent = "DEMO";
+    document.querySelector(".key-hint").textContent = "PUBLIC PREVIEW";
+    document.querySelector(".sidebar-footer small").textContent =
+      "Synthetic samples · browser memory";
+    document.querySelector(
+      ".page-footer",
+    ).firstElementChild.nextElementSibling.textContent =
+      "Demo events stay in your browser. Run real agents locally.";
+    $("pages-note").hidden = false;
+    $("go-live").textContent = "Follow demo ↗";
+  }
   const config = await api("/api/config");
   if (config.enableCodex) {
     const option = $("demo-mode").querySelector('[value="codex"]');
@@ -613,7 +647,11 @@ await act(async () => {
   const remembered = localStorage.getItem("relay-run");
   if (runs.length)
     await selectRun(
-      runs.some((r) => r.id === remembered) ? remembered : runs[0].id,
+      runs.some((r) => r.id === remembered)
+        ? remembered
+        : staticDemo
+          ? "sample-rewrite"
+          : runs[0].id,
     );
   else {
     $("empty").hidden = false;

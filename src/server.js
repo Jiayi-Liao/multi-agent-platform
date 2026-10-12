@@ -200,6 +200,11 @@ export function createApp({
         const files = {
           "/": ["public/index.html", "text/html"],
           "/app.js": ["public/app.js", "text/javascript"],
+          "/transport.js": ["public/transport.js", "text/javascript"],
+          "/static-demo.js": ["public/static-demo.js", "text/javascript"],
+          "/api.html": ["public/api.html", "text/html"],
+          "/api.css": ["public/api.css", "text/css"],
+          "/client.js": ["src/client.js", "text/javascript"],
           "/world.js": ["public/world.js", "text/javascript"],
           "/world-state.js": ["src/world-state.js", "text/javascript"],
           "/vendor/three.module.js": [
