@@ -203,7 +203,7 @@ function render() {
 let page = ["overview", "replay", "agents", "dashboard"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
 let profileTab = "history";
 const pageCopy = {
-  dashboard: ["Dashboard", "EXPERIMENT WORKSPACE / DESIGN IN PROGRESS", 'Your experiments.<br /><em>A shared canvas.</em>', "A planned workspace for agent-created dashboards, live metrics, and reproducible experiment history.", "FROM METRICS TO UNDERSTANDING"],
+  dashboard: ["Dashboard", "AGENT CHART GALLERY / DESIGN IN PROGRESS", 'Your agents.<br /><em>Their charts.</em>', "A planned space for finding and viewing the charts created by each agent.", "FIND AN AGENT. SEE ITS CHARTS."],
   overview: ["Overview", "MISSION CONTROL / MULTI-AGENT WORKSPACE", 'Small agents.<br /><em>Big picture.</em>', "A living world for your crew. Follow the handoffs, understand the work, and replay every turn.", "YOUR MISSION, AT A GLANCE"],
   replay: ["Replay studio", "REPLAY STUDIO / EVERY TURN, PRESERVED", 'Go back.<br /><em>See how it happened.</em>', "Step through the story. Each moment restores the crew, messages, and artifacts exactly as they were.", "ONE EVENT AT A TIME"],
   agents: ["Agent crew", "CREW DIRECTORY / ANY ROLE, ONE MISSION", 'Meet the minds.<br /><em>Trace the work.</em>', "Explore each agent’s activity, conversations, tools, and output—all in one continuous record.", "THE PEOPLE BEHIND THE PACKETS"],

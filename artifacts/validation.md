@@ -98,3 +98,7 @@ Screenshots: [overview](overview-redesign.jpg), [replay](replay-redesign.jpg), [
 - Static Pages bundle validated at `/multi-agent-platform/`: fresh storage defaults to English, synthetic demo streams new events into the first list position, completed artifacts stay newest-first, and Dashboard is available without requiring an agent selection. No console errors/warnings.
 - Responsive checks at 390×844: Chinese navigation, Dashboard brief, agent artifacts and API guide have no horizontal overflow. Temporary viewport overrides reset after verification. Light theme checked visually; theme/language are independently stored and dark styling uses existing semantic tokens.
 - Screenshots: `artifacts/chinese-artifacts.jpg` (synthetic data, two artifact versions and timestamps) and `artifacts/dashboard-plan.jpg` (Chinese planning entry).
+
+### Dashboard scope correction — 2026-10-15
+
+The user clarified that Dashboard should give each agent a place to display its finished charts. Replaced the earlier metrics-platform proposal with a small agent chart gallery: agent selection, image thumbnails, title/time, newest-first order, larger preview, and original-file access. Reuse existing agents/artifact ownership and add image attachments during implementation. Updated both plans, both READMEs, and the bilingual planning brief. No chart gallery or upload API is implemented in this planning change. Syntax check, Pages build and diff check passed; the local Chinese brief was visually verified.

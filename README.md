@@ -46,7 +46,7 @@ Use the sidebar to move between **Overview**, **Replay studio**, **Agent crew**,
 
 - **Overview:** a 3D mission outpost, compact run metrics, the latest output, and quick crew access.
 - **Replay studio:** a current-event card, transport controls, scrollable chapter checkpoints, and the complete event journal. Events ahead of the cursor are dimmed; selecting one restores that exact point. Space toggles playback and arrow keys step events outside text fields and controls with their own native keyboard behavior.
-- **Dashboard:** a planning brief for agent-created boards and experiment curves. The feature and its APIs are not implemented yet; see the [implementation plan](artifacts/dashboard-plan.md) ([中文](artifacts/dashboard-plan.zh-CN.md)).
+- **Dashboard:** a planning brief for a chart gallery grouped by agent: choose an agent, preview its finished images, and open the original files. Image submission and the gallery are not implemented yet; see the [implementation plan](artifacts/dashboard-plan.md) ([中文](artifacts/dashboard-plan.zh-CN.md)).
 - **Agent crew:** search arbitrary names or roles, inspect current activity and parent relationships, and switch between complete history, messages, artifacts, and tools. Opening a record jumps to it in replay. Event journals, chapters, agent records, conversations, acknowledgements, tools and artifacts list newest events first. Artifact cards include a full local timestamp with timezone, elapsed time, and source event sequence. Every profile follows the selected replay point; agents and output that do not exist yet remain absent.
 
 

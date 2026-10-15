@@ -296,3 +296,6 @@ body[data-page="agents"] .stats { display: none; }
 
 .order-note { color: var(--muted); font: 8px var(--mono); white-space: nowrap; }
 @media (max-width: 600px) { .order-note { display: none; } }
+
+/* Keep the chart-gallery brief's ornament above longer bilingual headings. */
+.plan-mark { font-size: 38px; top: 20px; }
