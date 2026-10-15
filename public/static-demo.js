@@ -37,6 +37,10 @@ export class StaticDemo {
       return { enableCodex: false, staticDemo: true };
     if (route === "/api/runs" && data === undefined)
       return [...this.runs.values()].map((e) => this.summary(e)).reverse();
+    if (route === "/api/demo/charts" && data !== undefined) {
+      if (this.jobs.size >= 3) throw new Error("Three browser demos are already playing. Wait for one to finish.");
+      return this.launch("sample-charts");
+    }
     if (route === "/api/demo" && data !== undefined) {
       if (data.mode && data.mode !== "deterministic")
         throw new Error(
@@ -62,8 +66,9 @@ export class StaticDemo {
       "This action needs the local server. Open API & setup to connect your own agents.",
     );
   }
-  launch() {
-    const template = this.runs.values().next().value;
+  launch(templateId = "sample-rewrite") {
+    const template = this.runs.get(templateId);
+    if (!template) throw new Error("Sample run not found.");
     const id = `browser-demo-${++this.serial}`;
     const start = this.now();
     const offset = template[0].timestamp;
@@ -74,7 +79,7 @@ export class StaticDemo {
       timestamp: start + e.timestamp - offset,
       payload:
         e.type === "run.created"
-          ? { ...e.payload, id, title: "Rewriter ↔ Verifier · browser demo" }
+          ? { ...e.payload, id, title: templateId === "sample-charts" ? "Trainer + Evaluator · browser HTML demo" : "Rewriter ↔ Verifier · browser demo" }
           : e.payload,
     }));
     const events = all.slice(0, 4);

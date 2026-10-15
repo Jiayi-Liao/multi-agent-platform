@@ -9,6 +9,10 @@ export async function createTransport(project) {
       staticDemo: true,
       request: (path, data) => demo.request(path, data),
       subscribe: (id, after) => demo.subscribe(id, after),
+      chartUrl: (_runId, document) => {
+        if (!["training-loss-first.html", "training-loss-final.html", "evaluation-comparison.html"].includes(document?.asset)) return null;
+        return new URL(`./demo-charts/${document.asset}`, import.meta.url).href;
+      },
       close: () => demo.close(),
     };
   }
@@ -31,6 +35,8 @@ export async function createTransport(project) {
     },
     subscribe: (id, after) =>
       new EventSource(`/api/runs/${id}/stream?after=${after}`),
+    chartUrl: (runId, document, download = false) => document?.id
+      ? `/api/runs/${encodeURIComponent(runId)}/charts/${encodeURIComponent(document.id)}/html${download ? "?download=1" : ""}` : null,
     close() {},
   };
 }

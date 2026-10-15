@@ -1,3 +1,4 @@
+import { CHART_CSP } from "../src/chart-documents.js";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
@@ -39,7 +40,7 @@ const server = createServer(async (req, res) => {
       "Content-Type": types[extname(path)] || "text/plain",
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy":
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
+        url.pathname.includes("/demo-charts/") ? CHART_CSP : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
     });
     res.end(req.method === "HEAD" ? undefined : data);
   } catch {

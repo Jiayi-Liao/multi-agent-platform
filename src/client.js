@@ -80,6 +80,10 @@ export class PlatformClient {
       payload: { ...payload, agentId: this.agentId },
     });
   }
+  /** Submit a self-contained HTML chart/dashboard, with inline styles and scripts. */
+  chart(name, html, { content = "", version = 1 } = {}) {
+    return this.request(this.path("/charts"), { agentId: this.agentId, name, html, content, version });
+  }
   finish(status = "completed") {
     return this.request(this.path("/finish"), { status });
   }

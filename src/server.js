@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
 import { Store, DomainError } from "./store.js";
 import { runDemo } from "./demo.js";
+import { runChartDemo, chartFixtures } from "./chart-demo.js";
+import { CHART_CSP } from "./chart-documents.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const json = (res, data, status = 200) => {
@@ -13,17 +15,18 @@ const json = (res, data, status = 200) => {
   });
   res.end(JSON.stringify(data));
 };
-async function body(req) {
+async function body(req, limit = 128000) {
   if (!req.headers["content-type"]?.startsWith("application/json"))
     throw new DomainError("Use application/json.", 415);
-  let data = "";
+  const chunks = [];
+  let length = 0;
   for await (const chunk of req) {
-    data += chunk;
-    if (Buffer.byteLength(data) > 128000)
-      throw new DomainError("Request body too large.", 413);
+    length += chunk.length;
+    if (length > limit) throw new DomainError("Request body too large.", 413);
+    chunks.push(chunk);
   }
   try {
-    const p = JSON.parse(data);
+    const p = JSON.parse(Buffer.concat(chunks).toString("utf8"));
     if (!p || typeof p !== "object" || Array.isArray(p)) throw new Error();
     return p;
   } catch {
@@ -95,6 +98,16 @@ export function createApp({
           .finally(() => jobs.delete(run.id));
         return;
       }
+      if (path === "/api/demo/charts" && req.method === "POST") {
+        await body(req);
+        if (jobs.size >= 3) throw new DomainError("Three demos are already running.", 429);
+        const run = store.createRun({ title: "Trainer + Evaluator · HTML demo", mode: "deterministic" });
+        const controller = new AbortController();
+        jobs.set(run.id, controller);
+        json(res, run, 201);
+        runChartDemo(store, run.id, { signal: controller.signal }).catch(() => {}).finally(() => jobs.delete(run.id));
+        return;
+      }
       const match = path.match(/^\/api\/runs\/([^/]+)(?:\/(.*))?$/);
       if (match) {
         const [, id, action = ""] = match;
@@ -104,6 +117,18 @@ export function createApp({
             run: store.snapshot(id).run,
             events: store.events(id),
           });
+        const documentMatch = action.match(/^charts\/([a-zA-Z0-9-]+)\/html$/);
+        if (req.method === "GET" && documentMatch) {
+          const document = store.chartDocument(id, documentMatch[1]);
+          res.writeHead(200, {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "private, max-age=86400, immutable",
+            "Content-Security-Policy": CHART_CSP,
+            "Content-Disposition": `${url.searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="chart-${document.id}.html"`,
+          });
+          res.end(document.source);
+          return;
+        }
         if (req.method === "GET" && action === "export") {
           res.setHeader(
             "Content-Disposition",
@@ -154,7 +179,8 @@ export function createApp({
           return json(res, store.inbox(id, agentId, limit));
         }
         if (req.method === "POST") {
-          const input = await body(req);
+          const input = await body(req, action === "charts" ? 3 * 1024 * 1024 : 128000);
+          if (action === "charts") return json(res, store.chart(id, input), 201);
           if (action === "agents")
             return json(res, store.registerAgent(id, input), 201);
           if (action === "messages")
@@ -199,6 +225,7 @@ export function createApp({
       if (req.method === "GET") {
         const files = {
           "/": ["public/index.html", "text/html"],
+          "/gallery.js": ["public/gallery.js", "text/javascript"],
           "/app.js": ["public/app.js", "text/javascript"],
           "/transport.js": ["public/transport.js", "text/javascript"],
           "/static-demo.js": ["public/static-demo.js", "text/javascript"],
@@ -226,7 +253,10 @@ export function createApp({
           "/state.js": ["src/state.js", "text/javascript"],
           "/favicon.svg": ["public/favicon.svg", "image/svg+xml"],
         };
+        for (const { file } of chartFixtures)
+          files[`/demo-charts/${file}`] = [`public/demo-charts/${file}`, "text/html; charset=utf-8"];
         const entry = files[path];
+        if (path.startsWith("/demo-charts/")) res.setHeader("Content-Security-Policy", CHART_CSP);
         if (entry) {
           res.writeHead(200, { "Content-Type": entry[1] });
           res.end(await readFile(join(root, entry[0])));

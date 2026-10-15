@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
+import { MAX_HTML_BYTES } from "./chart-documents.js";
 import { project, terminalMessages } from "./state.js";
 
 export class DomainError extends Error {
@@ -29,7 +30,8 @@ export class Store extends EventEmitter {
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
       CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, title TEXT NOT NULL, mode TEXT NOT NULL, created_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT UNIQUE NOT NULL, run_id TEXT NOT NULL REFERENCES runs(id), type TEXT NOT NULL, timestamp INTEGER NOT NULL, payload TEXT NOT NULL);
-      CREATE INDEX IF NOT EXISTS events_run_seq ON events(run_id,seq);`);
+      CREATE INDEX IF NOT EXISTS events_run_seq ON events(run_id,seq);
+      CREATE TABLE IF NOT EXISTS chart_documents (id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id), agent_id TEXT NOT NULL, source TEXT NOT NULL);`);
   }
   close() {
     this.db.close();
@@ -282,6 +284,28 @@ export class Store extends EventEmitter {
       .filter((m) => m.toAgentId === agentId && !terminalMessages.has(m.status))
       .slice(0, limit);
   }
+  chart(runId, { agentId, name, html, content = "", version = 1 }) {
+    const state = this.active(runId);
+    requireValue(Object.hasOwn(state.agents, agentId), "Agent not found.", 404);
+    name = textField(name, "chart name", 140);
+    requireValue(typeof html === "string" && html.trim().length > 0, "html must be a non-empty HTML document string.");
+    requireValue(Buffer.byteLength(html) <= MAX_HTML_BYTES, "HTML documents must be at most 2 MiB.", 413);
+    requireValue(typeof content === "string" && content.length <= 2000, "Chart description must be at most 2000 characters.");
+    requireValue(Number.isInteger(version) && version >= 1, "Invalid artifact version.");
+    const id = randomUUID();
+    const payload = { id, agentId, name, content, version, html: { id, byteLength: Buffer.byteLength(html) } };
+    // The document and its artifact event either both commit or neither commits.
+    const [event] = this.append(runId, [["artifact.created", payload]], () =>
+      this.db.prepare("INSERT INTO chart_documents VALUES(?,?,?,?)").run(id, runId, agentId, html),
+    );
+    return { ...payload, timestamp: event.timestamp, eventSeq: event.seq };
+  }
+  chartDocument(runId, documentId) {
+    this.getRun(runId);
+    const document = this.db.prepare("SELECT * FROM chart_documents WHERE run_id=? AND id=?").get(runId, documentId);
+    requireValue(document, "HTML chart not found.", 404);
+    return document;
+  }
   record(runId, type, p) {
     const s = this.active(runId);
     requireValue(
@@ -290,6 +314,7 @@ export class Store extends EventEmitter {
     );
     requireValue(s.agents[p.agentId], "Agent not found.", 404);
     if (type === "artifact.created") {
+      requireValue(p.html === undefined, "Submit HTML attachments through the charts endpoint.");
       textField(p.name, "artifact name", 140);
       textField(p.content, "artifact content", 32000);
       requireValue(

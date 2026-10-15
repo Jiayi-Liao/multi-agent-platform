@@ -51,7 +51,7 @@
           <a href="#messages">03 Messaging protocol</a
           ><a href="#events">04 Status & artifacts</a>
           <a href="#sdk">05 SDK examples</a
-          ><a href="#stream">06 Live subscriptions</a>
+          ><a href="#stream">06 Live subscriptions</a><a href="#charts">07 HTML dashboards</a>
         </aside>
         <div class="docs-content">
           <section id="setup">
@@ -96,7 +96,7 @@ npm start
               Base URL: <code>http://localhost:4310</code>. In this table,
               <code>R = /api/runs/:runId</code>. POST requests require
               <code>Content-Type: application/json</code> and a request body of
-              at most 128,000 bytes.
+              at most 128,000 bytes (HTML chart submissions allow 3 MiB).
             </p>
             <div class="table-scroll">
               <table>
@@ -322,12 +322,12 @@ curl -X POST http://localhost:4310/api/runs/RUN_ID/messages \
           </section>
           <section id="sdk">
             <div class="section-kicker">05 / JAVASCRIPT CLIENT</div>
-            <h2>Connect your agents with nine methods</h2>
+            <h2>Connect your agents with ten methods</h2>
             <p>
               The project provides <code>PlatformClient</code>:
               <code>createRun</code>, <code>register</code>, <code>send</code>,
               <code>reply</code>, <code>inbox</code>, <code>ack</code>,
-              <code>status</code>, <code>record</code>, and <code>finish</code>.
+              <code>status</code>, <code>record</code>, <code>chart</code>, and <code>finish</code>.
               It is a source module, currently not a separate npm package.
               <a href="./client.js" download="relay-client.js"
                 >Download client.js ↓</a
@@ -379,6 +379,26 @@ await planner.finish();</code></pre>
               same event projection to reconstruct any point in history. Replay
               does not rerun models or tools.
             </p>
+          </section>
+          <section id="charts">
+            <div class="section-kicker">07 / AGENT HTML DASHBOARDS</div>
+            <h2>Give every agent a place for its HTML.</h2>
+            <p>Agents submit complete HTML dashboards with their own charts, styles and interactions. Dashboard groups them by agent, newest first. Open an interactive preview or download the source.</p>
+            <div class="table-scroll"><table><thead><tr><th>Method & path</th><th>Purpose / request fields</th></tr></thead><tbody>
+              <tr><td><b>POST</b> <code>R/charts</code></td><td>Submit HTML: <code>{ agentId, name, html, content?, version? }</code>. Submit the HTML source string, not a file path.</td></tr>
+              <tr><td><b>GET</b> <code>R/charts/:documentId/html</code></td><td>Read the HTML document. Add <code>?download=1</code> to download its source.</td></tr>
+              <tr><td><b>POST</b> <code>/api/demo/charts</code></td><td>Start the two-agent HTML demo with <code>{}</code>.</td></tr>
+            </tbody></table></div>
+            <pre><code>import { readFile } from 'node:fs/promises';
+import { PlatformClient } from './src/client.js';
+const agent = new PlatformClient({ runId: 'RUN_ID', agentId: 'trainer' });
+await agent.chart('Training dashboard', await readFile('dashboard.html', 'utf8'), {
+  content: 'Loss after 100 steps', version: 1
+});
+// Full two-agent SDK demo: npm run demo:charts</code></pre>
+            <p>Register the run and agent first. Each HTML document is limited to 2 MiB UTF-8; chart submissions allow a 3 MiB JSON body. Finished runs reject new submissions. Inline CSS, JavaScript, SVG and canvas work in the interactive viewer; bundle libraries and data inline.</p>
+            <p>HTML runs in an isolated iframe with scripts enabled and no same-origin access. External scripts, fetch/XHR, nested frames and forms are blocked. Local document responses also enforce sandboxing when opened directly. Agent HTML is never inserted into the platform DOM.</p>
+            <p>The source and artifact event are saved together in SQLite. SSE sends metadata; documents load through run-scoped URLs. JSON exports contain document IDs and metadata, not HTML source. Download HTML separately. Pages includes only bundled synthetic dashboards.</p>
           </section>
         </div>
       </div>

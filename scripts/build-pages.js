@@ -3,6 +3,7 @@ import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Store } from "../src/store.js";
 import { runDemo } from "../src/demo.js";
+import { runChartDemo, chartFixtures } from "../src/chart-demo.js";
 import { project } from "../src/state.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -90,15 +91,20 @@ export async function syntheticSamples() {
     store.ack(research.id, brief.id, "delivered", "planner");
     store.ack(research.id, brief.id, "answered", "planner");
     store.finish(research.id);
-    return [rewrite, research].map((run, index) => {
-      const id = index ? "sample-research" : "sample-rewrite";
+    const charts = store.createRun({ title: "Trainer + Evaluator · HTML sample", mode: "deterministic" });
+    await runChartDemo(store, charts.id, { delayMs: 0 });
+    let chartIndex = 0;
+    const ids = ["sample-rewrite", "sample-research", "sample-charts"];
+    return [rewrite, research, charts].map((run, index) => {
+      const id = ids[index];
       const events = store.events(run.id).map((e, i) => ({
         ...e,
         seq: i + 1,
         id: `${id}-event-${i}`,
         runId: id,
         timestamp: Date.UTC(2026, 9, 12) + i * 300,
-        payload: e.type === "run.created" ? { ...e.payload, id } : e.payload,
+        payload: e.type === "run.created" ? { ...e.payload, id } : e.payload.html
+          ? { ...e.payload, html: { ...e.payload.html, asset: chartFixtures[chartIndex++].file } } : e.payload,
       }));
       return { run: project(events).run, events };
     });
@@ -113,6 +119,7 @@ export async function buildPages(destination = join(root, "dist")) {
   const files = {
     "index.html": "public/index.html",
     "app.js": "public/app.js",
+    "gallery.js": "public/gallery.js",
     "world.js": "public/world.js",
     "transport.js": "public/transport.js",
     "static-demo.js": "public/static-demo.js",
@@ -144,6 +151,9 @@ export async function buildPages(destination = join(root, "dist")) {
       text = text.replace(/(from\s+["'])\/(?!\/)/g, "$1./");
     await writeFile(join(destination, name), text);
   }
+  await mkdir(join(destination, "demo-charts"), { recursive: true });
+  for (const { file } of chartFixtures)
+    await copyFile(join(root, "public/demo-charts", file), join(destination, "demo-charts", file));
   for (const name of ["three.module.js", "three.core.js"])
     await copyFile(
       join(root, "node_modules/three/build", name),

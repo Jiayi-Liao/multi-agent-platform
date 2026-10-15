@@ -29,13 +29,42 @@ npm start
 - **回放工作室**：当前事件、播放 / 暂停、逐步跳转、倍速、章节和完整事件日志。历史列表最新在前；时间轴正向推进。未来事件在日志中变暗，点击后还原对应时刻，不重新执行模型或工具。
 - **智能体团队**：按名称 / 角色搜索，查看父子关系、活动、历史、消息、产物和工具。所有列表按事件倒序；档案仅包含回放位置已发生的内容。
 - **产物时间**：总览、详情和 Agent 产物列表显示日期、时分秒、毫秒、时区、运行内相对时间与源事件序号。ISO 时间可通过悬停查看。
-- **Dashboard / 看板**：目前为按 Agent 归类的图表展示区规划入口：选择 Agent、预览它生成的图片、打开原文件。图片提交与展示功能尚未实现。参见[独立实施计划](artifacts/dashboard-plan.zh-CN.md)。
+- **Dashboard / 看板**：每个 Agent 都有自己的 HTML 看板位置，包括暂无提交的 Agent。选择 Agent，按最新优先浏览其作品，打开交互预览或下载 HTML 源码。点击“启动 HTML 演示”体验两个 Agent 分别提交看板。
 
 空状态可新建运行、添加任意角色，在详情中发消息，或通过 HTTP / JavaScript 客户端接入外部运行时。导出为 JSON，本地历史在重启后保留。
 
+## 两个 Agent 分别提交 HTML
+
+进入 **看板 → 启动 HTML 演示**：Trainer 提交初版 loss 看板，Evaluator 提交结果对比看板，Trainer 再提交最终版。两位 Agent 的 HTML 分别归类，最新版本在前。打开交互预览，可调整训练步数、开关验证曲线，或切换 Accuracy / F1 指标。
+
+这是使用模拟数据的确定性演示，不启动模型或真实训练。本地运行 `npm run demo:charts`，可以验证两个独立 `PlatformClient` 通过 HTTP 提交 HTML。
+
+```js
+import { readFile } from 'node:fs/promises';
+import { PlatformClient } from './src/client.js';
+const agent = new PlatformClient({ runId: 'YOUR_RUN_ID', agentId: 'YOUR_AGENT_ID' });
+await agent.chart('训练看板', await readFile('dashboard.html', 'utf8'), {
+  content: '训练 100 步后的结果', version: 1
+});
+```
+
+请先注册 run 和 Agent，提交 HTML 源码，不是文件路径。支持内联 CSS、JavaScript、SVG、canvas 和 data 图片，每份最多 2 MiB UTF-8，JSON 请求最多 3 MiB。需要的库和数据请打包在 HTML 内；外部脚本、fetch/XHR、嵌套页面、表单和主页面访问均被阻止。
+
+HTML 在 `sandbox="allow-scripts"` 的独立 iframe 中运行，不授予 `allow-same-origin`，也不会插入平台自身 DOM。本地 HTML 响应同样带有 sandbox CSP，直接打开时也受隔离。Agent 的样式、交互与内容保持原样。
+
+源码和 artifact 事件在同一个 SQLite 事务中保存，刷新 / 重启后仍可查看。SSE 发送元数据，文档通过同 run 的地址加载。回到过去时，未来 HTML 提交不会提前出现。新事件到达或界面切换语言时，不重置已打开看板的交互状态。
+
+JSON 导出只有文档 ID 和元信息，HTML 源码请单独下载；文档 ID 只能在持有数据库的服务中解析。Pages 只发布三份模拟 HTML，用 `node scripts/generate-chart-samples.js` 即可重新生成，无需额外绘图库。
+
+新增接口：
+
+- `POST /api/runs/:runId/charts`：提交 `agentId`、`name`、HTML 字符串 `html`，可选 `content`、`version`。
+- `GET /api/runs/:runId/charts/:documentId/html`：读取 HTML；加 `?download=1` 下载源码。
+- `POST /api/demo/charts`：以 `{}` 启动双 Agent HTML 演示。
+
 ## 接入与 API
 
-API 仅监听本机 `127.0.0.1:4310`。POST 要求 JSON，同源浏览器写入，请求体最多 128,000 字节。详见支持语言切换的 [API 指南](public/api.html)；完整接口表也在 [English README](README.md#api)。
+API 仅监听本机 `127.0.0.1:4310`。POST 要求 JSON，同源浏览器写入，普通请求体最多 128,000 字节；HTML 提交允许 3 MiB JSON，每份 HTML 源码最多 2 MiB。详见支持语言切换的 [API 指南](public/api.html)；完整接口表也在 [English README](README.md#api)。
 
 ```js
 import { PlatformClient } from './src/client.js';
@@ -82,6 +111,6 @@ npm test
 npm run build:pages
 ```
 
-当前范围包括记录、通信、回放和 Codex 演示适配器。大历史仍一次载入内存；分页、状态快照和列表虚拟化属于后续工作。Dashboard 计划简化为给每个 Agent 留一个图表展示位置，复用现有产物归属，支持图片预览和查看原文件。
+当前范围包括记录、通信、回放和 Codex 演示适配器。大历史仍一次载入内存；分页、状态快照和列表虚拟化属于后续工作。Dashboard 已实现按 Agent 归类的 HTML 看板展示，复用现有产物归属和事件记录。
 
 通信设计参考 [Open Agent Bridge](https://github.com/kevinArgueta96/open-agent-bridge)，为独立实现，不是 fork 或协议兼容客户端。MIT 许可。

@@ -79,10 +79,11 @@
           ><button id="start-demo" class="primary">↗ Launch demo</button>
         </div>
       </section>
-      <section id="dashboard-page" class="dashboard-plan panel" hidden aria-label="Dashboard roadmap">
-        <div class="plan-intro"><span class="eyebrow">DESIGN BRIEF / PLANNED</span><span class="plan-mark" aria-hidden="true">▥</span><h2>A place for every agent’s charts.</h2><p>Find an agent, then browse the charts it has created. Each agent gets its own space, with previews and original files.</p><span class="badge">PLANNING · NOT AVAILABLE YET</span></div>
-        <div class="plan-grid"><article><span>01 / FIND</span><h3>Choose an agent</h3><p>Every agent has a place here. Select a name to find its charts, including loss curves or any other image it creates.</p></article><article><span>02 / BROWSE</span><h3>See its charts</h3><p>Agents submit finished images. Preview cards show the title and creation time, with the newest chart first.</p></article><article><span>03 / OPEN</span><h3>Open the original</h3><p>Click a chart for a larger view, then open or download the original file.</p></article></div>
-        <div class="plan-footer"><p>This is the plan for an agent chart gallery. Image submission and the gallery are not implemented yet.</p><a class="outline" href="https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.md" target="_blank" rel="noopener">Read the implementation plan ↗</a></div>
+      <section id="dashboard-page" class="chart-dashboard" tabindex="-1" hidden aria-label="Agent HTML dashboards">
+        <div class="gallery-toolbar panel"><div><span id="chart-mode" class="live-tag">YOUR AGENTS’ HTML WORK</span><h2 id="chart-run-title">Choose a run or launch the HTML demo.</h2><span id="chart-total" class="muted"></span></div><div class="gallery-actions"><button id="chart-follow" class="outline" hidden>Return to live ↗</button><button id="chart-stop" class="quiet danger" hidden>Stop run</button><button id="chart-demo" class="primary">↗ Run HTML demo</button></div></div>
+        <div class="chart-workspace"><aside class="chart-directory panel"><div class="directory-head"><span class="eyebrow">CHOOSE AN AGENT</span><strong id="chart-agent-count">0 agents</strong></div><div id="chart-agent-list" class="chart-agent-list"></div><p class="directory-note">A place for every agent. Their HTML dashboards stay together.</p></aside>
+          <div class="chart-collection"><div class="chart-collection-heading"><div><span class="eyebrow">FINISHED WORK / NEWEST FIRST</span><h2 id="chart-agent-title">Every agent gets a place.</h2><span id="chart-agent-role" class="muted"></span></div><span id="chart-count" class="count-pill">0</span></div><div id="chart-grid" class="chart-grid"></div></div>
+        </div><p class="gallery-note">Agent-authored HTML, with styles and interactions. Previews run in isolated frames · up to 2 MiB per document.</p>
       </section>
       <div id="empty" class="empty-welcome" hidden>
         <span class="empty-orbit">◎</span>
@@ -338,6 +339,7 @@
         </div>
       </form>
     </dialog>
+    <dialog id="chart-dialog" class="chart-dialog" aria-labelledby="chart-viewer-title"><div class="chart-dialog-head"><h2 id="chart-viewer-title"></h2><button id="chart-close" class="quiet" data-close>Close ×</button></div><div id="chart-viewer"></div></dialog>
     <div id="toast" role="status" hidden></div>
     <script type="module" src="/app.js"></script>
   </body>

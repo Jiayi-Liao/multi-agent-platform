@@ -1,5 +1,6 @@
 import { project, terminalMessages } from "/state.js";
 import { agentRecord, checkpoints, newestFirst } from "/history.js";
+import { ChartGallery } from "/gallery.js";
 import { AgentWorld } from "/world.js";
 import { createTransport } from "/transport.js";
 const { t, locale, formatTimestamp } = window.RelayI18n;
@@ -74,6 +75,10 @@ function connection(text, ok = false) {
     ? "var(--lime)"
     : "var(--orange)";
 }
+const gallery = new ChartGallery({
+  transport, esc, robot, time: artifactTime,
+  onDemo: act(launchChartDemo), onLive: () => $("go-live").click(), onStop: () => $("cancel").click(),
+});
 async function refreshRuns() {
   runs = await api("/api/runs");
   renderRuns();
@@ -141,8 +146,9 @@ function visibleEvents() {
 function render() {
   $("empty").hidden = !!runId || page === "dashboard";
   $("workspace").hidden = !runId || page === "dashboard";
-  if (!runId) return;
+  if (!runId) { gallery.update(null, null, true, page === "dashboard"); return; }
   state = project(visibleEvents());
+  gallery.update(state, runId, live, page === "dashboard");
   const run = state.run;
   $("run-title").textContent = run.title;
   $("run-id").textContent = run.id.slice(0, 8);
@@ -203,7 +209,7 @@ function render() {
 let page = ["overview", "replay", "agents", "dashboard"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
 let profileTab = "history";
 const pageCopy = {
-  dashboard: ["Dashboard", "AGENT CHART GALLERY / DESIGN IN PROGRESS", 'Your agents.<br /><em>Their charts.</em>', "A planned space for finding and viewing the charts created by each agent.", "FIND AN AGENT. SEE ITS CHARTS."],
+  dashboard: ["Dashboard", "AGENT CHART GALLERY / FINISHED WORK", 'Your agents.<br /><em>Their charts.</em>', "Each agent has a place for its HTML dashboards. Open a preview, interact with its charts, or download the source.", "FIND AN AGENT. SEE ITS CHARTS."],
   overview: ["Overview", "MISSION CONTROL / MULTI-AGENT WORKSPACE", 'Small agents.<br /><em>Big picture.</em>', "A living world for your crew. Follow the handoffs, understand the work, and replay every turn.", "YOUR MISSION, AT A GLANCE"],
   replay: ["Replay studio", "REPLAY STUDIO / EVERY TURN, PRESERVED", 'Go back.<br /><em>See how it happened.</em>', "Step through the story. Each moment restores the crew, messages, and artifacts exactly as they were.", "ONE EVENT AT A TIME"],
   agents: ["Agent crew", "CREW DIRECTORY / ANY ROLE, ONE MISSION", 'Meet the minds.<br /><em>Trace the work.</em>', "Explore each agent’s activity, conversations, tools, and output—all in one continuous record.", "THE PEOPLE BEHIND THE PACKETS"],
@@ -226,6 +232,7 @@ function setPage(next) {
   });
   $("agent-page").hidden = page !== "agents";
   $("dashboard-page").hidden = page !== "dashboard";
+  document.querySelector(".skip-link").href = page === "dashboard" ? "#dashboard-page" : "#workspace";
   document.querySelector(".heading-actions").hidden = page === "dashboard";
   $("empty").hidden = !!runId || page === "dashboard";
   document.querySelector(".workspace-grid").hidden = page === "agents";
@@ -414,7 +421,7 @@ function renderMission() {
   const artifact = newestFirst(state.artifacts)[0];
   const current = events[cursor], info = current && eventInfo(current);
   $("mission-summary").innerHTML = artifact
-    ? `<h3>${esc(artifact.name)} <span>v${artifact.version || 1}</span></h3><p>${esc(artifact.content)}</p><span class="brief-meta">${t("OUTPUT BY")} ${esc(name(artifact.agentId))}</span>${artifactTime(artifact)}`
+    ? `<h3>${esc(artifact.name)} <span>v${artifact.version || 1}</span></h3><p>${esc(artifact.content)}</p><span class="brief-meta">${t("OUTPUT BY")} ${esc(name(artifact.agentId))}</span>${artifactTime(artifact)}${artifact.html ? `<button class="profile-link" data-dashboard-agent="${esc(artifact.agentId)}">${t("See HTML in Dashboard ↗")}</button>` : ""}`
     : `<h3>${esc(info?.title || t("Waiting for the first handoff"))}</h3><p>${esc(info?.text || t("Your crew’s activity will appear as the mission unfolds."))}</p>`;
   $("crew-strip").innerHTML = Object.values(state.agents).map((a) => `<button data-profile-agent="${esc(a.id)}" class="crew-chip">${robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><span class="crew-dot ${esc(a.status)}" title="${esc(t(a.status))}"></span></button>`).join("");
 }
@@ -440,7 +447,7 @@ function renderAgents() {
   const tabs = [["history", "History", record.history.length], ["messages", "Messages", record.messages.length], ["artifacts", "Artifacts", record.artifacts.length], ["tools", "Tools", record.tools.length]];
   let content;
   if (profileTab === "messages") content = record.messages.map((m) => `<button class="profile-message" data-seek="${sends.get(m.id)}"><header><strong>${esc(name(m.fromAgentId))} <span>→</span> ${esc(name(m.toAgentId))}</strong><span class="detail-tag">${esc(t(m.status))}</span></header><p>${esc(m.content)}</p><small>${duration(m.timestamp - firstTime())} · ${t(m.fromAgentId === a.id ? "OUTGOING" : "INCOMING")} · ${t("Open in replay ↗")}</small></button>`).join("");
-  else if (profileTab === "artifacts") content = record.artifacts.map((x) => `<div class="profile-output"><span class="eyebrow">${t("ARTIFACT / VERSION {0}", x.version || 1)}</span><h3>${esc(x.name)}</h3><p>${esc(x.content)}</p>${artifactTime(x)}</div>`).join("");
+  else if (profileTab === "artifacts") content = record.artifacts.map((x) => `<div class="profile-output"><span class="eyebrow">${t("ARTIFACT / VERSION {0}", x.version || 1)}</span><h3>${esc(x.name)}</h3><p>${esc(x.content)}</p>${gallery.preview(x)}${artifactTime(x)}</div>`).join("");
   else if (profileTab === "tools") content = record.tools.map((tool) => `<div class="profile-output"><span class="eyebrow">${t("TOOL")} / ${esc(t(tool.status).toUpperCase())}</span><h3>${esc(tool.name)}</h3>${artifactTime({ ...tool, timestamp: tool.finishedAt ?? tool.timestamp })}<div class="detail-label">${t("Input")}</div><pre>${esc(tool.input || t("No input recorded"))}</pre><div class="detail-label">${t("Output")}</div><pre>${esc(tool.error || tool.output || t("No output at this point"))}</pre></div>`).join("");
   else content = record.history.map((e) => { const info = eventInfo(e); return `<button class="profile-history-row" data-seek="${positions.get(e.id)}"><time>${duration(e.timestamp - firstTime())}</time><span class="history-dot ${info.kind}"></span><span><strong>${esc(info.title)}</strong><p>${esc(info.text || "")}</p></span><small>#${e.seq} ↗</small></button>`; }).join("");
   el.innerHTML = `<div class="profile-cover"><span class="eyebrow">${t("CREWMATE /")} ${esc(a.role.toUpperCase())}</span><span class="profile-number">${String(agents.indexOf(a) + 1).padStart(2, "0")}</span></div><div class="profile-identity">${robot(a.id, true)}<div><h2>${esc(a.name)}</h2><span class="profile-status"><i class="crew-dot ${esc(a.status)}"></i>${esc(t(a.status))} · ${esc(a.role)}</span></div><button class="quiet" data-seek="${events.findIndex((e) => e.type === "agent.registered" && e.payload.id === a.id)}">${t("First appearance \u2197")}</button></div><div class="profile-activity"><span class="eyebrow">${t("CURRENT ACTIVITY")}</span><p>${esc(a.activity || t("Ready for the next handoff."))}</p><div class="profile-meta"><span>${t("Parent")} <strong>${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</strong></span><span class="mono">${esc(a.id)}</span></div></div><div class="profile-metrics">${metrics.map(([n, label]) => `<div><strong>${String(n).padStart(2, "0")}</strong><span>${t(label)}</span></div>`).join("")}</div><nav class="profile-tabs" aria-label="${t("Agent records")}">${tabs.map(([id, label, count]) => `<button data-profile-tab="${id}" aria-label="${t(label)} (${count})" aria-pressed="${profileTab === id}">${t(label)}<span>${count}</span></button>`).join("")}</nav><div class="profile-records">${content || `<div class="profile-empty"><h3>${t("No {0} at this point.", t(profileTab))}</h3><p>${t("This view follows the replay clock. New records appear as the mission progresses.")}</p></div>`}</div>${compose(a.id)}`;
@@ -469,7 +476,7 @@ function renderInspector() {
   }
   const event = visibleEvents().find((e) => e.id === selection?.eventId);
   if (!event) {
-    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>${t("Select an agent to explore its history.")}<br>${t("Select a message to follow its conversation.")}<br>${t("Move through playback to inspect an earlier state.")}</div><div class="detail-label">${t("Run summary")}</div><div class="detail-meta">${esc(state.run.mode)} ${t("runtime")}<br>${events.length} ${staticDemo ? t("synthetic events in browser") : t("events saved locally")}<br>${connected ? (staticDemo ? t("Synthetic browser stream connected") : t("Live event stream connected")) : t("Connecting to event stream")}</div>${state.run.error ? `<div class="detail-label">${t("Run stopped")}</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">${t("Artifacts at this point")}</div>${newestFirst(state.artifacts).map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong>${artifactTime(a)}<p>${esc(a.content)}</p></div>`).join("")}`;
+    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>${t("Select an agent to explore its history.")}<br>${t("Select a message to follow its conversation.")}<br>${t("Move through playback to inspect an earlier state.")}</div><div class="detail-label">${t("Run summary")}</div><div class="detail-meta">${esc(state.run.mode)} ${t("runtime")}<br>${events.length} ${staticDemo ? t("synthetic events in browser") : t("events saved locally")}<br>${connected ? (staticDemo ? t("Synthetic browser stream connected") : t("Live event stream connected")) : t("Connecting to event stream")}</div>${state.run.error ? `<div class="detail-label">${t("Run stopped")}</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">${t("Artifacts at this point")}</div>${newestFirst(state.artifacts).map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong>${artifactTime(a)}${gallery.preview(a)}<p>${esc(a.content)}</p></div>`).join("")}`;
     return;
   }
   const p = event.payload,
@@ -492,7 +499,7 @@ function renderInspector() {
     return;
   }
   const info = eventInfo(event);
-  el.innerHTML = `<div class="eyebrow">${esc(t(info.kind).toUpperCase())} ${t("EVENT")}</div><h4>${esc(info.title)}</h4><div class="detail-meta">${artifactTime({ timestamp: event.timestamp, eventSeq: event.seq })}</div><div class="detail-label">${t("Recorded content")}</div><div class="detail-body">${esc(info.text || "")}</div><div class="detail-label">${t("Event payload")}</div><pre class="detail-meta">${esc(JSON.stringify(p, null, 2))}</pre>`;
+  el.innerHTML = `<div class="eyebrow">${esc(t(info.kind).toUpperCase())} ${t("EVENT")}</div><h4>${esc(info.title)}</h4><div class="detail-meta">${artifactTime({ timestamp: event.timestamp, eventSeq: event.seq })}</div><div class="detail-label">${t("Recorded content")}</div><div class="detail-body">${esc(info.text || "")}</div>${p.html ? gallery.preview(p) : ""}<div class="detail-label">${t("Event payload")}</div><pre class="detail-meta">${esc(JSON.stringify(p, null, 2))}</pre>`;
 }
 function seek(index) {
   live = false;
@@ -539,6 +546,11 @@ document.addEventListener(
       e.preventDefault();
       if (location.hash === pageLink.hash) setPage(pageLink.dataset.pageLink);
       else location.hash = pageLink.dataset.pageLink;
+    }
+    const dashboardAgent = e.target.closest("[data-dashboard-agent]");
+    if (dashboardAgent) {
+      gallery.agentId = dashboardAgent.dataset.dashboardAgent;
+      location.hash = "dashboard"; setPage("dashboard");
     }
     const profile = e.target.closest("[data-profile-agent]");
     if (profile) {
@@ -596,6 +608,7 @@ document.addEventListener(
 $("agent-search").addEventListener("input", renderAgents);
 $("search").addEventListener("input", renderTimeline);
 document.addEventListener("keydown", (e) => {
+  if (document.querySelector("dialog[open]")) return;
   if (page !== "replay" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.target.closest("input, textarea, select, [contenteditable]")) return;
   if (e.code === "Space" && !e.target.closest("button")) { e.preventDefault(); $("play").click(); }
   if (e.key === "ArrowLeft") { e.preventDefault(); seek(cursor - 1); }
@@ -644,6 +657,15 @@ setInterval(() => {
   if (cursor >= events.length - 1) playing = false;
   render();
 }, 100);
+async function launchChartDemo() {
+  $("chart-demo").disabled = true;
+  try {
+    const run = await api("/api/demo/charts", {});
+    await refreshRuns();
+    await selectRun(run.id);
+    toast(t("HTML demo started. Trainer and Evaluator will submit their dashboards."));
+  } finally { $("chart-demo").disabled = false; }
+}
 async function launchDemo() {
   $("start-demo").disabled = true;
   try {
@@ -752,7 +774,6 @@ setInterval(() => {
     refreshRuns().catch(() => connection("Server unavailable"));
 }, 5000);
 function applyModeCopy() {
-  document.querySelector(".plan-footer a").href = locale() === "zh-CN" ? "https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.zh-CN.md" : "https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.md";
 
   const codex = $("demo-mode").querySelector('[value="codex"]');
   if (codexEnabled && codex) codex.textContent = t("Codex CLI · real agents");
@@ -795,7 +816,7 @@ await act(async () => {
       runs.some((r) => r.id === remembered)
         ? remembered
         : staticDemo
-          ? "sample-rewrite"
+          ? page === "dashboard" ? "sample-charts" : "sample-rewrite"
           : runs[0].id,
     );
   else {

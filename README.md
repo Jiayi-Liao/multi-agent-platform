@@ -16,7 +16,7 @@ The dashboard and API guide support light and dark themes. Use the theme switch 
 
 The source repository is public. Clone it to run the local backend, connect your agents, or extend the visualization. The Pages site provides synthetic examples and the client module.
 
-The project includes a static GitHub Pages build: an interactive Three.js demo with two synthetic sample workflows, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. Connect real agents to the local HTTP API below.
+The project includes a static GitHub Pages build: an interactive Three.js demo with three synthetic sample workflows, including interactive HTML dashboards, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. Connect real agents to the local HTTP API below.
 
 ```sh
 npm run build:pages
@@ -42,11 +42,11 @@ The demo intentionally starts from a flawed announcement, then goes through **re
 
 ## What you can do
 
-Use the sidebar to move between **Overview**, **Replay studio**, **Agent crew**, and **Dashboard** (planning). The URL hash preserves the selected view on reload and supports direct links on GitHub Pages (`#overview`, `#replay`, `#agents`, `#dashboard`).
+Use the sidebar to move between **Overview**, **Replay studio**, **Agent crew**, and **Dashboard**. The URL hash preserves the selected view on reload and supports direct links on GitHub Pages (`#overview`, `#replay`, `#agents`, `#dashboard`).
 
 - **Overview:** a 3D mission outpost, compact run metrics, the latest output, and quick crew access.
 - **Replay studio:** a current-event card, transport controls, scrollable chapter checkpoints, and the complete event journal. Events ahead of the cursor are dimmed; selecting one restores that exact point. Space toggles playback and arrow keys step events outside text fields and controls with their own native keyboard behavior.
-- **Dashboard:** a planning brief for a chart gallery grouped by agent: choose an agent, preview its finished images, and open the original files. Image submission and the gallery are not implemented yet; see the [implementation plan](artifacts/dashboard-plan.md) ([中文](artifacts/dashboard-plan.zh-CN.md)).
+- **Dashboard:** each agent has a place for its HTML dashboards, including an empty state when it has not submitted one. Select an agent to browse its work, newest first; open an interactive preview or download the HTML source. **Run HTML demo** shows Trainer submitting loss dashboards and Evaluator submitting a comparison dashboard.
 - **Agent crew:** search arbitrary names or roles, inspect current activity and parent relationships, and switch between complete history, messages, artifacts, and tools. Opening a record jumps to it in replay. Event journals, chapters, agent records, conversations, acknowledgements, tools and artifacts list newest events first. Artifact cards include a full local timestamp with timezone, elapsed time, and source event sequence. Every profile follows the selected replay point; agents and output that do not exist yet remain absent.
 
 
@@ -57,6 +57,33 @@ Use the sidebar to move between **Overview**, **Replay studio**, **Agent crew**,
 - Create a custom run, add agents, exchange messages manually in the inspector, then finish the run.
 - Connect your own runtime through the API and the small JavaScript client.
 - Export run history as JSON. Local histories survive browser reloads and server restarts.
+
+## Agent HTML dashboards
+
+Open **Dashboard → Run HTML demo**. Two agents submit standalone HTML: Trainer submits an initial loss dashboard, Evaluator submits a comparison dashboard, then Trainer submits its final version. In the larger preview, adjust Trainer's step slider or validation toggle; switch Evaluator between Accuracy and F1 score. The demo uses synthetic data and does not run a model or training job.
+
+For two independent clients submitting HTML through the local HTTP API:
+
+```sh
+npm run demo:charts
+```
+
+Your own agent can submit a complete HTML document:
+
+```js
+import { readFile } from "node:fs/promises";
+import { PlatformClient } from "./src/client.js";
+const agent = new PlatformClient({ runId: "YOUR_RUN_ID", agentId: "YOUR_AGENT_ID" });
+await agent.chart("Training dashboard", await readFile("dashboard.html", "utf8"), {
+  content: "Loss after 100 steps", version: 1,
+});
+```
+
+Register the run and agent first. Submit HTML source, not a file path. Documents can include inline CSS, JavaScript, SVG, canvas and data images, up to **2 MiB UTF-8** each (3 MiB JSON request body). Bundle any needed libraries and data inline: external scripts, fetch/XHR, nested frames, forms and parent-page access are blocked. The viewer uses `sandbox="allow-scripts"` without `allow-same-origin`; local document responses also carry a sandbox CSP when opened directly. Agent HTML is never inserted into the platform's DOM. The public demo files contain only authored synthetic examples.
+
+The HTML source and its `artifact.created` event commit atomically to SQLite. Metadata streams over SSE; the document loads from a run-scoped URL. Finished runs stay readable, and documents survive refreshes and server restarts. Existing text artifacts keep working. The gallery follows the selected replay cursor so future submissions stay hidden. An open dashboard keeps its interactive state through new events and language changes.
+
+JSON exports contain document IDs and metadata, not HTML source; download HTML separately. IDs resolve on the server holding the database. Pages bundles only the three synthetic HTML files. Regenerate them with `node scripts/generate-chart-samples.js`; no charting library or build dependency is required.
 
 ## Real Codex demo
 
@@ -116,7 +143,7 @@ Poll `client.inbox()` from an external worker to receive outstanding messages; a
 
 UI ordering never mutates the persisted log: history APIs, exports, SSE and replay projection stay in ascending commit order; worker inboxes retain oldest-first processing.
 
-The HTTP API is available at **http://localhost:4310**. It is a local API, not an internet-hosted service. POST requests require `Content-Type: application/json` and at most 128,000 bytes. Run endpoints are run-scoped and use JSON. The [browser API guide](public/api.html) also covers the JavaScript client and SSE subscriptions. A run is the communication namespace. A conversation belongs to two participants inside that run.
+The HTTP API is available at **http://localhost:4310**. It is a local API, not an internet-hosted service. POST requests require `Content-Type: application/json` and at most 128,000 bytes, except HTML chart submissions (3 MiB JSON / 2 MiB source). Run endpoints are run-scoped and use JSON. The [browser API guide](public/api.html) also covers the JavaScript client and SSE subscriptions. A run is the communication namespace. A conversation belongs to two participants inside that run.
 
 | Method     | Endpoint                                   | Purpose                                                                                                           |
 | ---------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
@@ -132,6 +159,9 @@ The HTTP API is available at **http://localhost:4310**. It is a local API, not a
 | POST       | `/api/runs/:runId/finish`                  | Finish with `status=completed` (default), `failed`, or `cancelled`; optional `error`                              |
 | POST       | `/api/runs/:runId/cancel`                  | Stop the owned demo and mark the run cancelled                                                                    |
 | GET        | `/api/runs/:runId/export`                  | Download recorded run JSON                                                                                        |
+| POST       | `/api/runs/:runId/charts`                 | Submit `agentId`, `name`, HTML source `html`, optional `content` and `version` |
+| GET        | `/api/runs/:runId/charts/:documentId/html` | Read HTML; add `?download=1` to download the source |
+| POST       | `/api/demo/charts`                        | Start the two-agent HTML demo with `{}` |
 | POST       | `/api/demo`                                | Start `mode=deterministic` or opt-in `codex`                                                                      |
 
 Supported external event types:

@@ -39,7 +39,7 @@ function timers() {
 }
 test("Pages samples come from synthetic workflows and retain verified reply histories", async () => {
   const samples = await syntheticSamples();
-  assert.equal(samples.length, 2);
+  assert.equal(samples.length, 3);
   const rewrite = project(samples[0].events),
     research = project(samples[1].events);
   assert.equal(rewrite.run.status, "completed");
@@ -134,7 +134,7 @@ test("Pages builds at a repository subpath and publishes only explicit public as
   const html = await readFile(join(destination, "index.html"), "utf8");
   assert.match(html, /data-mode="demo"/);
   assert.ok(!/(?:src|href)="\/(?!\/)/.test(html));
-  for (const name of ["app.js", "world.js", "transport.js"]) {
+  for (const name of ["app.js", "world.js", "transport.js", "gallery.js"]) {
     const code = await readFile(join(destination, name), "utf8");
     assert.ok(!/from\s+["']\/(?!\/)/.test(code), name);
   }
@@ -144,6 +144,9 @@ test("Pages builds at a repository subpath and publishes only explicit public as
       files.includes("theme.js") &&
       files.includes("theme.css") &&
       files.includes("experience.css") &&
+      files.includes("gallery.js") &&
+      files.includes("demo-charts/training-loss-final.html") &&
+      files.includes("demo-charts/evaluation-comparison.html") &&
       files.includes("history.js") &&
       files.includes("i18n.js") &&
       files.includes("dashboard-plan.md") &&
@@ -172,4 +175,26 @@ test("a failed stream scheduler leaves no dangling listener that breaks cleanup"
   assert.throws(() => demo.subscribe("sample-rewrite"), /Timer unavailable/);
   assert.doesNotThrow(() => demo.close());
   assert.equal(demo.listeners.get("sample-rewrite").size, 0);
+});
+
+test("Pages chart demo streams two agents' HTML without introducing local file URLs", async () => {
+  const samples = await syntheticSamples(), clock = timers();
+  const sample = samples.find((s) => s.run.id === "sample-charts");
+  assert.deepEqual(Object.keys(project(sample.events).agents), ["trainer", "evaluator"]);
+  const expected = project(sample.events).artifacts;
+  assert.deepEqual(expected.map((a) => a.agentId), ["trainer", "evaluator", "trainer"]);
+  assert.ok(expected.every((a) => /^[a-z-]+\.html$/.test(a.html.asset)));
+  const demo = new StaticDemo(samples, project, clock);
+  const run = await demo.request("/api/demo/charts", {});
+  const first = await demo.request(`/api/runs/${run.id}`);
+  assert.equal(project(first.events).artifacts.length, 0);
+  const source = demo.subscribe(run.id, 4), received = [];
+  source.onmessage = (e) => received.push(JSON.parse(e.data));
+  clock.advance(20000);
+  const final = await demo.request(`/api/runs/${run.id}`);
+  assert.equal(final.run.status, "completed");
+  assert.deepEqual(project(final.events).artifacts.map((a) => a.html.asset), expected.map((a) => a.html.asset));
+  assert.equal(received.filter((e) => e.payload.html).length, 3);
+  assert.equal(project(first.events).artifacts.length, 0);
+  demo.close();
 });

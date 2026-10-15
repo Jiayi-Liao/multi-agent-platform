@@ -1,51 +1,16 @@
-# Dashboard：每个 Agent 的图表展示区
+# Dashboard：每个 Agent 的 HTML 看板位置
 
-状态：规划中，尚未实现。当前侧边栏入口展示本计划的说明。
+状态：已实现。[English](dashboard-plan.md)
 
-[English](dashboard-plan.md)
+每个 Agent 都有一个位置，用户能找到它创建的 HTML 看板。布局、图表和交互由 Agent 自己编写，平台负责保存、归类和预览。
 
-## 要做什么
+- 选择 run，再选择 Agent。每个已注册 Agent 都有自己的位置，没有提交时显示空状态。
+- 按最新优先浏览 HTML，看板卡片显示标题、时间和版本。
+- 打开交互预览，也可以直接打开 HTML 或下载源码。
+- 使用 `client.chart(name, html, { content?, version? })` 提交；run 和 Agent 必须先注册。
+- HTML 源码与 artifact 事件原子保存到 SQLite，重启后保留，并遵循回放位置。
+- 支持自包含 HTML 的内联 CSS、JavaScript、SVG 和 canvas。预览在独立沙箱中运行，依赖和数据需内联。
 
-给每个 Agent 留一个位置，让用户找到它画的图。图表由 Agent 自己生成，平台负责按 Agent 归类、预览和打开。
+双 Agent 演示：Trainer 提交可调整训练步数的 loss 看板，Evaluator 提交可切换指标的对比看板。Trainer 再提交第二版，用于验证最新优先。界面点击“启动 HTML 演示”，或在本地运行 `npm run demo:charts`。Pages 只使用内置模拟 HTML。
 
-例如：训练 Agent 生成一张 loss 曲线，评估 Agent 生成一张结果对比图。用户进入 Dashboard，选择对应 Agent，就能看到它提交的图表。
-
-## 页面长什么样
-
-- 沿用当前 run 和已注册的 Agent 列表，每个 Agent 都有自己的展示区。
-- 展示 Agent 的名称、角色、图表数量；没有图的 Agent 显示“暂无图表”。
-- 选择 Agent 后，以缩略图卡片展示它的图表；卡片显示标题和生成时间，最新在前。
-- 点击图表即可放大查看，并可打开或下载原文件。
-- 一位 Agent 可以提交多张图，不同 Agent 的图不能混在一起。
-
-```text
-Dashboard
-├─ Trainer   · 2 张图
-│  ├─ Loss curve       [缩略图] → 打开大图
-│  └─ Learning rate    [缩略图] → 打开大图
-├─ Evaluator · 1 张图
-│  └─ Results          [缩略图] → 打开大图
-└─ Writer    · 暂无图表
-```
-
-## 怎么接入
-
-复用已有 Agent 和 artifact 的归属关系。Agent 生成图表后提交图片，附上所属 Agent、标题即可；平台记录时间并保存文件。第一版先支持 PNG、JPEG 和 WebP 图片，loss 曲线只是其中一个例子。
-
-实现时为现有 artifact 增加轻量的图片附件入口，由本地服务保存并提供可访问的文件地址。不能把 Agent 机器上的任意文件路径直接当作浏览器图片地址。既有文本 artifact 保持可用，图片展示区只收录带图片附件的产物。
-
-平台直接展示成品图，不要求 Agent 上报逐点指标或描述如何绘图。第一版也不增加实验管理、图表编辑器或曲线级回放。现有消息和事件回放继续使用现有页面。
-
-## 实施顺序
-
-1. **保存图片**：让图片附件关联到现有 run、Agent 和 artifact，刷新 / 重启后仍能读取。
-2. **按 Agent 展示**：Dashboard 增加 Agent 选择和图表卡片，支持最新在前、放大和打开原文件。
-3. **接入示例**：用两个 Agent 各提交一张不同的图，补上中英文说明；GitHub Pages 只展示内置模拟图片。
-
-## 验收
-
-- 能找到每个 Agent 对应的位置，包括尚未提交图片的 Agent。
-- 两个 Agent 各提交一张图，用户能准确找到各自的图。
-- 同一 Agent 新增一张图后，最新图片排在最前面。
-- 图片标题、时间、预览、放大及原文件均可查看，刷新后仍保留。
-- 中英文、深浅主题和手机布局可正常使用。
+不需要实验管理系统、逐点指标 API 或图表布局协议，Agent 提交的单位就是 HTML。具体接口和大小限制见 README 与 API 指南。

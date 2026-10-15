@@ -41,6 +41,7 @@ test("the local server delivers all Three.js modules under the self-only CSP", a
     "/theme.css",
     "/experience.css",
     "/history.js",
+    "/gallery.js",
     "/i18n.js",
     "/dashboard-plan.md",
     "/dashboard-plan.zh-CN.md",
