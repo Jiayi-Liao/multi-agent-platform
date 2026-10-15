@@ -115,3 +115,11 @@ The user clarified that Dashboard should give each agent a place to display its 
 - Pages preview tested under `/multi-agent-platform/`, with three allowlisted HTML fixtures and no runtime/private data. Browser demo streams HTML artifacts to the correct agents. Rewinding to the start yields zero agents/dashboards; returning to live restores both agents and Trainer's newest-first versions.
 - 390×844 mobile gallery/viewer have no horizontal overflow; F1 interaction works on mobile. Light/dark gallery styling checked, with each agent's document retaining its authored appearance. Temporary viewport override reset.
 - Screenshots: `artifacts/html-gallery.jpg` and `artifacts/html-interaction.jpg`, both captured from the synthetic Pages preview.
+
+## Agent display names · 2026-10-15
+
+- `npm test`: **52 passing tests**. Seven rename regressions cover run isolation and validation, unchanged routing/hierarchy/HTML ownership, cursor-limited historical names, retry no-ops, terminal execution protection, SQLite restart persistence, encoded agent IDs through HTTP/SDK, SSE delivery, in-flight browser-demo sequences, immutable sample templates, and replay across long post-run metadata gaps.
+- `npm run check`: 32 JavaScript files pass syntax checks. `npm run build:pages` and `git diff --check` pass.
+- Browser: created a separate two-agent HTML demo (`e601652f-1c08-4080-9f7e-fdab32d92555`); renamed Trainer to `训练负责人` and Evaluator to `Evaluation lead`. Confirmed new names in Dashboard ownership labels, agent profiles/history, 3D labels, and Overview inspector. Agent IDs remain `trainer` / `evaluator`; both agents retain their HTML documents.
+- Browser: whitespace-only input is rejected in Chinese; cancellation discards an unsaved draft; a page reload retains saved local names. The event before the Evaluator rename restores `Evaluator`, while returning to live restores `Evaluation lead`. Execution elapsed remains `00:02` after post-run changes.
+- Pages preview: renamed a completed synthetic agent, verified the mobile dialog and profile controls without horizontal overflow, and confirmed reload restores the original sample name. Public-demo edits stay in browser memory. English and Chinese UI/API copy, the rename endpoint, and the eleven-method SDK guide were inspected.

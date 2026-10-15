@@ -536,6 +536,7 @@ export class AgentWorld {
     }
     for (const a of agents) {
       const node = this.nodes.get(a.id);
+      node.label.querySelector("strong").textContent = a.name;
       node.label.classList.toggle("selected", selected === a.id);
       node.label.title = `${a.name} · ${a.role} · ${t(a.status)}${a.activity ? " · " + a.activity : ""}`;
       node.label.setAttribute(

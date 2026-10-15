@@ -1,5 +1,5 @@
 import { project, terminalMessages } from "/state.js";
-import { agentRecord, checkpoints, newestFirst } from "/history.js";
+import { agentRecord, checkpoints, newestFirst, replayClock } from "/history.js";
 import { ChartGallery } from "/gallery.js";
 import { AgentWorld } from "/world.js";
 import { createTransport } from "/transport.js";
@@ -8,6 +8,7 @@ const { t, locale, formatTimestamp } = window.RelayI18n;
 await window.RelayI18n.ready;
 const transport = await createTransport(project);
 const staticDemo = transport.staticDemo;
+document.getElementById("rename-demo-note").hidden = !staticDemo;
 let codexEnabled = false;
 const $ = (id) => document.getElementById(id);
 const esc = (value) =>
@@ -95,6 +96,7 @@ function renderRuns() {
     : `<div class="sidebar-empty">${t("No runs yet.")}<br>${t("Your history will appear here.")}</div>`;
 }
 async function selectRun(id) {
+  $("rename-dialog").close();
   const token = ++generation;
   source?.close();
   source = null;
@@ -164,7 +166,7 @@ function render() {
       .length,
   ).padStart(2, "0");
   $("stat-elapsed").textContent = duration(
-    (events[cursor]?.timestamp || firstTime()) - firstTime(),
+    Math.min(events[cursor]?.timestamp || firstTime(), run.finishedAt ?? Infinity) - firstTime(),
   );
   $("stat-events").textContent = t("{0} recorded events", cursor + 1);
   $("view-mode").textContent = live
@@ -306,6 +308,9 @@ function eventInfo(e, context = state) {
       symbol: "+",
       agentId: p.id,
     };
+  if (e.type === "agent.renamed")
+    return { title: t("{0} renamed to {1}", p.previousName, p.name),
+      text: t("Agent ID unchanged: {0}", p.agentId), kind: "agent", symbol: "✎", agentId: p.agentId };
   if (e.type === "agent.status")
     return {
       title: `${name(p.agentId)} · ${t(p.status)}`,
@@ -414,6 +419,7 @@ function chapterLabel({ event: e }) {
   return e.type === "run.created" ? t("Mission start")
     : e.type === "run.finished" ? t("Run {0}", t(p.status))
     : e.type === "agent.registered" ? t("{0} joins", p.name)
+    : e.type === "agent.renamed" ? t("{0} renamed to {1}", p.previousName, p.name)
     : e.type === "artifact.created" ? `${p.name} · v${p.version || 1}`
     : t(p.replyTo ? "Reply recorded" : "New handoff");
 }
@@ -450,7 +456,7 @@ function renderAgents() {
   else if (profileTab === "artifacts") content = record.artifacts.map((x) => `<div class="profile-output"><span class="eyebrow">${t("ARTIFACT / VERSION {0}", x.version || 1)}</span><h3>${esc(x.name)}</h3><p>${esc(x.content)}</p>${gallery.preview(x)}${artifactTime(x)}</div>`).join("");
   else if (profileTab === "tools") content = record.tools.map((tool) => `<div class="profile-output"><span class="eyebrow">${t("TOOL")} / ${esc(t(tool.status).toUpperCase())}</span><h3>${esc(tool.name)}</h3>${artifactTime({ ...tool, timestamp: tool.finishedAt ?? tool.timestamp })}<div class="detail-label">${t("Input")}</div><pre>${esc(tool.input || t("No input recorded"))}</pre><div class="detail-label">${t("Output")}</div><pre>${esc(tool.error || tool.output || t("No output at this point"))}</pre></div>`).join("");
   else content = record.history.map((e) => { const info = eventInfo(e); return `<button class="profile-history-row" data-seek="${positions.get(e.id)}"><time>${duration(e.timestamp - firstTime())}</time><span class="history-dot ${info.kind}"></span><span><strong>${esc(info.title)}</strong><p>${esc(info.text || "")}</p></span><small>#${e.seq} ↗</small></button>`; }).join("");
-  el.innerHTML = `<div class="profile-cover"><span class="eyebrow">${t("CREWMATE /")} ${esc(a.role.toUpperCase())}</span><span class="profile-number">${String(agents.indexOf(a) + 1).padStart(2, "0")}</span></div><div class="profile-identity">${robot(a.id, true)}<div><h2>${esc(a.name)}</h2><span class="profile-status"><i class="crew-dot ${esc(a.status)}"></i>${esc(t(a.status))} · ${esc(a.role)}</span></div><button class="quiet" data-seek="${events.findIndex((e) => e.type === "agent.registered" && e.payload.id === a.id)}">${t("First appearance \u2197")}</button></div><div class="profile-activity"><span class="eyebrow">${t("CURRENT ACTIVITY")}</span><p>${esc(a.activity || t("Ready for the next handoff."))}</p><div class="profile-meta"><span>${t("Parent")} <strong>${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</strong></span><span class="mono">${esc(a.id)}</span></div></div><div class="profile-metrics">${metrics.map(([n, label]) => `<div><strong>${String(n).padStart(2, "0")}</strong><span>${t(label)}</span></div>`).join("")}</div><nav class="profile-tabs" aria-label="${t("Agent records")}">${tabs.map(([id, label, count]) => `<button data-profile-tab="${id}" aria-label="${t(label)} (${count})" aria-pressed="${profileTab === id}">${t(label)}<span>${count}</span></button>`).join("")}</nav><div class="profile-records">${content || `<div class="profile-empty"><h3>${t("No {0} at this point.", t(profileTab))}</h3><p>${t("This view follows the replay clock. New records appear as the mission progresses.")}</p></div>`}</div>${compose(a.id)}`;
+  el.innerHTML = `<div class="profile-cover"><span class="eyebrow">${t("CREWMATE /")} ${esc(a.role.toUpperCase())}</span><span class="profile-number">${String(agents.indexOf(a) + 1).padStart(2, "0")}</span></div><div class="profile-identity">${robot(a.id, true)}<div><h2>${esc(a.name)}</h2><span class="profile-status"><i class="crew-dot ${esc(a.status)}"></i>${esc(t(a.status))} · ${esc(a.role)}</span></div><div class="profile-actions">${renameButton(a)}<button class="quiet" data-seek="${events.findIndex((e) => e.type === "agent.registered" && e.payload.id === a.id)}">${t("First appearance \u2197")}</button></div></div><div class="profile-activity"><span class="eyebrow">${t("CURRENT ACTIVITY")}</span><p>${esc(a.activity || t("Ready for the next handoff."))}</p><div class="profile-meta"><span>${t("Parent")} <strong>${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</strong></span><span class="mono">${esc(a.id)}</span></div></div><div class="profile-metrics">${metrics.map(([n, label]) => `<div><strong>${String(n).padStart(2, "0")}</strong><span>${t(label)}</span></div>`).join("")}</div><nav class="profile-tabs" aria-label="${t("Agent records")}">${tabs.map(([id, label, count]) => `<button data-profile-tab="${id}" aria-label="${t(label)} (${count})" aria-pressed="${profileTab === id}">${t(label)}<span>${count}</span></button>`).join("")}</nav><div class="profile-records">${content || `<div class="profile-empty"><h3>${t("No {0} at this point.", t(profileTab))}</h3><p>${t("This view follows the replay clock. New records appear as the mission progresses.")}</p></div>`}</div>${compose(a.id)}`;
 }
 
 function compose(agentId, original = null) {
@@ -471,7 +477,7 @@ function renderInspector() {
   if (selection?.agentId && state.agents[selection.agentId]) {
     const a = state.agents[selection.agentId];
     const history = agentRecord(state, visibleEvents(), a.id).history;
-    el.innerHTML = `<div class="eyebrow">${t("AGENT DETAILS")}</div><h4>${esc(a.name)}</h4><span class="detail-tag">${esc(a.role)} · ${esc(t(a.status))}</span><div class="detail-label">${t("Current activity")}</div><div class="detail-body">${esc(a.activity || t("Ready for work"))}</div><div class="detail-label">${t("Identity")}</div><div class="detail-meta">${esc(a.id)}<br>${t("Parent:")} ${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</div><a class="profile-link" href="#agents" data-profile-agent="${esc(a.id)}">${t("Open full agent profile \u2197")}</a><div class="detail-label">${t("Agent history · {0} events", history.length)}</div>${history.map((e) => `<button class="conversation-button" data-event="${esc(e.id)}">${esc(eventInfo(e).title)}<br><span class="muted">${esc((eventInfo(e).text || "").slice(0, 140))}</span></button>`).join("")}${compose(a.id)}`;
+    el.innerHTML = `<div class="eyebrow">${t("AGENT DETAILS")}</div><h4>${esc(a.name)}</h4>${renameButton(a)}<span class="detail-tag">${esc(a.role)} · ${esc(t(a.status))}</span><div class="detail-label">${t("Current activity")}</div><div class="detail-body">${esc(a.activity || t("Ready for work"))}</div><div class="detail-label">${t("Identity")}</div><div class="detail-meta">${esc(a.id)}<br>${t("Parent:")} ${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</div><a class="profile-link" href="#agents" data-profile-agent="${esc(a.id)}">${t("Open full agent profile \u2197")}</a><div class="detail-label">${t("Agent history · {0} events", history.length)}</div>${history.map((e) => `<button class="conversation-button" data-event="${esc(e.id)}">${esc(eventInfo(e).title)}<br><span class="muted">${esc((eventInfo(e).text || "").slice(0, 140))}</span></button>`).join("")}${compose(a.id)}`;
     return;
   }
   const event = visibleEvents().find((e) => e.id === selection?.eventId);
@@ -546,6 +552,19 @@ document.addEventListener(
       e.preventDefault();
       if (location.hash === pageLink.hash) setPage(pageLink.dataset.pageLink);
       else location.hash = pageLink.dataset.pageLink;
+    }
+    const rename = e.target.closest("[data-rename-agent]");
+    if (rename && live && Object.hasOwn(state.agents, rename.dataset.renameAgent)) {
+      const agent = state.agents[rename.dataset.renameAgent];
+      const form = $("rename-form");
+      form.dataset.runId = runId;
+      form.dataset.agentId = agent.id;
+      $("rename-name").value = agent.name;
+      $("rename-name").setCustomValidity("");
+      $("rename-agent-id").textContent = agent.id;
+      $("rename-error").hidden = true;
+      $("rename-dialog").showModal();
+      $("rename-name").select();
     }
     const dashboardAgent = e.target.closest("[data-dashboard-agent]");
     if (dashboardAgent) {
@@ -648,7 +667,7 @@ setInterval(() => {
     elapsed = now - lastTick;
   lastTick = now;
   if (!playing) return;
-  playbackTime += elapsed * Number($("speed").value);
+  playbackTime = replayClock(events, cursor, playbackTime + elapsed * Number($("speed").value));
   while (
     cursor + 1 < events.length &&
     events[cursor + 1].timestamp <= playbackTime
@@ -692,6 +711,31 @@ $("run-form").onsubmit = act(async (e) => {
   await refreshRuns();
   await selectRun(run.id);
 });
+function renameButton(agent) {
+  return `<button class="quiet rename-agent" data-rename-agent="${esc(agent.id)}" ${live ? "" : "disabled"} title="${t(live ? "Change display name" : "Return to live to rename agents")}">${t("Rename")}</button>`;
+}
+$("rename-name").addEventListener("input", () => $("rename-name").setCustomValidity(""));
+$("rename-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const form = e.target, input = $("rename-name"), name = input.value.trim();
+  if (!name) { input.setCustomValidity(t("Enter a name.")); input.reportValidity(); return; }
+  const targetRun = form.dataset.runId, agentId = form.dataset.agentId;
+  if (!live || targetRun !== runId) { $("rename-dialog").close(); return; }
+  const button = $("rename-save");
+  if (button.disabled) return;
+  button.disabled = true;
+  $("rename-error").hidden = true;
+  try {
+    await api(`/api/runs/${encodeURIComponent(targetRun)}/agents/${encodeURIComponent(agentId)}/rename`, { name });
+    if (targetRun === runId && agentId === form.dataset.agentId) {
+      $("rename-dialog").close();
+      toast(t("Agent renamed."));
+    }
+  } catch (error) {
+    $("rename-error").textContent = error.message;
+    $("rename-error").hidden = false;
+  } finally { button.disabled = false; }
+};
 $("crew-add").onclick = () => $("add-agent").click();
 $("add-agent").onclick = () => {
   $("parent-select").innerHTML =

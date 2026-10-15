@@ -58,6 +58,11 @@ export class ChartGallery {
     $("chart-mode").className = `live-tag ${!this.live && state ? "replay" : ""}`;
     $("chart-agent-count").textContent = t("{0} agents", agents.length);
     $("chart-agent-list").innerHTML = agents.map((a) => `<button class="chart-agent ${selected?.id === a.id ? "selected" : ""}" data-chart-agent="${esc(a.id)}" aria-pressed="${selected?.id === a.id}" aria-label="${esc(t("{0}, {1} dashboards", a.name, count(a.id)))}">${this.robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><b>${count(a.id)}</b></button>`).join("") || `<p class="no-events">${t("No agents at this point.")}</p>`;
+    $("chart-rename").hidden = !selected;
+    $("chart-rename").disabled = !this.live;
+    $("chart-rename").textContent = t("Rename");
+    $("chart-rename").title = t(this.live ? "Change display name" : "Return to live to rename agents");
+    $("chart-rename").dataset.renameAgent = selected?.id || "";
     $("chart-agent-title").textContent = selected?.name || t("Every agent gets a place.");
     $("chart-agent-role").textContent = selected?.role || t("Choose an agent to see its dashboards.");
     const charts = newestFirst(artifacts.filter((a) => a.agentId === selected?.id && a.html));

@@ -151,6 +151,7 @@ The HTTP API is available at **http://localhost:4310**. It is a local API, not a
 | GET / POST | `/api/runs`                                | List / create runs (`title`, optional `mode`)                                                                     |
 | GET        | `/api/runs/:runId`                         | Run and ordered events                                                                                            |
 | POST       | `/api/runs/:runId/agents`                  | Register `id`, `name`, `role`, optional `parentId`                                                                |
+| POST       | `/api/runs/:runId/agents/:agentId/rename` | Change the display name with `{ name }`; ID and routing remain stable |
 | POST       | `/api/runs/:runId/messages`                | Send `fromAgentId`, `toAgentId`, `content`, optional `id`, `conversationId`, `replyTo`, `kind`, `expectsResponse` |
 | GET        | `/api/runs/:runId/agents/:agentId/inbox`   | Pending messages, oldest first; `limit=1..100`, default 25                                                        |
 | POST       | `/api/runs/:runId/messages/:messageId/ack` | Recipient `actorId` and delivery `state`                                                                          |
@@ -173,7 +174,13 @@ Supported external event types:
 
 Message delivery follows `queued → delivered → processing → answered`, with a `failed` terminal path. A correlated reply can atomically mark its request answered. Requests with `expectsResponse=true` require a reply; ACK alone cannot claim a response. Fire-and-forget messages can be marked answered by their recipient.
 
-Use the same explicit `id` and `conversationId` when retrying a send: identical retries are idempotent, while conflicting reuse returns HTTP 409. Finished runs are read-only. Successful completion rejects outstanding reply requests or running tools. Cancellation/failure closes pending messages and recorded tools. Interrupted runs become visibly failed after restart; history remains intact. Automatic worker resumption is not implemented.
+Use the same explicit `id` and `conversationId` when retrying a send: identical retries are idempotent, while conflicting reuse returns HTTP 409. Finished execution is read-only; agent display names can still be changed through the rename endpoint. Successful completion rejects outstanding reply requests or running tools. Cancellation/failure closes pending messages and recorded tools. Interrupted runs become visibly failed after restart; history remains intact. Automatic worker resumption is not implemented.
+
+### Agent display names
+
+Select an agent in Overview, Agent crew, or Dashboard and choose **Rename**. Names are trimmed, required, and limited to 100 characters. Names may repeat; the run-scoped agent ID remains the routing identity. Renaming works for running and finished runs while following the latest events, and appends `agent.renamed` with `{ agentId, previousName, name }`. Repeating the current name is a no-op. Replay preserves the name used at each event; execution duration and terminal status stay unchanged. Changes persist in local SQLite. On GitHub Pages, changes exist only in the current browser session and reset on reload.
+
+JavaScript workers can call `await client.rename("Research lead")`. This changes the client's own agent name; use the HTTP endpoint to rename any agent in a run.
 
 ## Architecture
 

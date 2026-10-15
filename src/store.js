@@ -142,6 +142,16 @@ export class Store extends EventEmitter {
     this.append(runId, [["agent.registered", p]]);
     return p;
   }
+  // Display names are editable after execution ends; identity and execution remain immutable.
+  renameAgent(runId, agentId, name) {
+    const state = this.snapshot(runId);
+    requireValue(Object.hasOwn(state.agents, agentId), "Agent not found.", 404);
+    name = textField(name, "name", 100);
+    const agent = state.agents[agentId];
+    if (agent.name !== name)
+      this.append(runId, [["agent.renamed", { agentId, previousName: agent.name, name }]]);
+    return { ...agent, name };
+  }
   status(runId, agentId, status, activity = "") {
     const s = this.active(runId);
     requireValue(s.agents[agentId], "Agent not found.", 404);

@@ -143,6 +143,7 @@ npm start
                       agent must already exist in this run.
                     </td>
                   </tr>
+                  <tr><td><b>POST</b> <code>R/agents/:agentId/rename</code></td><td>Change display name: <code>{ name }</code>. Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.</td></tr>
                   <tr>
                     <td><b>POST</b> <code>R/messages</code></td>
                     <td>
@@ -267,9 +268,10 @@ curl -X POST http://localhost:4310/api/runs/RUN_ID/messages \
               messages are idempotent; conflicting content returns 409. A
               conversation belongs to two participants within a single run.
               Resolve all outstanding replies and running tools before
-              completing a run successfully. Finished runs are read-only.
+              completing a run successfully. Finished execution is read-only; agent display names can still be changed through the rename endpoint.
             </p>
           </section>
+          <p>Choose Rename in Overview, Agent crew, or Dashboard. Renames append agent.renamed events with agentId, previousName, and name. Replay shows the name at that point; finished runs keep their terminal status and execution duration. Local changes persist in SQLite. Public demo changes reset on reload.</p>
           <section id="events">
             <div class="section-kicker">04 / OBSERVABILITY</div>
             <h2>Agent status, tools, and artifacts</h2>
@@ -322,10 +324,10 @@ curl -X POST http://localhost:4310/api/runs/RUN_ID/messages \
           </section>
           <section id="sdk">
             <div class="section-kicker">05 / JAVASCRIPT CLIENT</div>
-            <h2>Connect your agents with ten methods</h2>
+            <h2>Connect your agents with eleven methods</h2>
             <p>
               The project provides <code>PlatformClient</code>:
-              <code>createRun</code>, <code>register</code>, <code>send</code>,
+              <code>createRun</code>, <code>register</code>, <code>rename</code>, <code>send</code>,
               <code>reply</code>, <code>inbox</code>, <code>ack</code>,
               <code>status</code>, <code>record</code>, <code>chart</code>, and <code>finish</code>.
               It is a source module, currently not a separate npm package.
@@ -347,6 +349,7 @@ const request = await planner.send('researcher', 'Find relevant papers.', {
 // External workers poll researcher.inbox() for outstanding messages.
 await researcher.ack(request.id, 'delivered');
 await researcher.ack(request.id, 'processing');
+await researcher.rename('Research lead'); // The routing ID stays researcher.
 await researcher.status('working', 'Reviewing papers');
 // Call your own agent runtime here.
 const result = await researcher.reply(request, 'Here is the research summary.');

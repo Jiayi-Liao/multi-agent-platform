@@ -183,6 +183,8 @@ export function createApp({
           if (action === "charts") return json(res, store.chart(id, input), 201);
           if (action === "agents")
             return json(res, store.registerAgent(id, input), 201);
+          if (/^agents\/[^/]+\/rename$/.test(action))
+            return json(res, store.renameAgent(id, decodeURIComponent(action.split("/")[1]), input.name));
           if (action === "messages")
             return json(res, store.send(id, input), 201);
           if (/^messages\/[^/]+\/ack$/.test(action))

@@ -352,3 +352,20 @@ body[data-page="dashboard"] .page-heading h1 { font-size: 40px; }
   body[data-page="dashboard"] .gallery-toolbar { flex-direction: row; align-items: center; }
   body[data-page="dashboard"] .gallery-actions { max-width: 145px; }
 }
+
+/* Agent names are editable metadata; the stable ID remains visible in the dialog. */
+.profile-actions, .chart-heading-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.profile-actions { margin-left: auto; justify-content: flex-end; }
+.rename-agent { white-space: nowrap; font-size: 11px; }
+#inspector-content > .rename-agent { display: block; margin: 8px 0 14px; }
+.profile-identity h2, #chart-agent-title { overflow-wrap: anywhere; }
+.profile-identity > div:not(.profile-actions) { min-width: 0; }
+#rename-dialog { width: min(460px, calc(100vw - 32px)); }
+.rename-note { font-size: 12px; line-height: 1.7; color: var(--muted); margin-block: 14px; }
+.rename-id { font-size: 11px; overflow-wrap: anywhere; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; }
+.rename-error { font-size: 12px; color: var(--orange); }
+@media (max-width: 600px) {
+  .profile-actions { width: 100%; margin-left: 0; justify-content: flex-start; }
+  .chart-collection-heading { flex-wrap: wrap; gap: 12px; }
+  .profile-actions button { font-size: 11px; }
+}

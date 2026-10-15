@@ -25,6 +25,9 @@ export function project(events) {
           registeredAt: event.timestamp,
         };
         break;
+      case "agent.renamed":
+        state.agents[p.agentId].name = p.name;
+        break;
       case "agent.status":
         Object.assign(state.agents[p.agentId], {
           status: p.status,

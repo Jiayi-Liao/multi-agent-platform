@@ -82,7 +82,7 @@
       <section id="dashboard-page" class="chart-dashboard" tabindex="-1" hidden aria-label="Agent HTML dashboards">
         <div class="gallery-toolbar panel"><div><span id="chart-mode" class="live-tag">YOUR AGENTS’ HTML WORK</span><h2 id="chart-run-title">Choose a run or launch the HTML demo.</h2><span id="chart-total" class="muted"></span></div><div class="gallery-actions"><button id="chart-follow" class="outline" hidden>Return to live ↗</button><button id="chart-stop" class="quiet danger" hidden>Stop run</button><button id="chart-demo" class="primary">↗ Run HTML demo</button></div></div>
         <div class="chart-workspace"><aside class="chart-directory panel"><div class="directory-head"><span class="eyebrow">CHOOSE AN AGENT</span><strong id="chart-agent-count">0 agents</strong></div><div id="chart-agent-list" class="chart-agent-list"></div><p class="directory-note">A place for every agent. Their HTML dashboards stay together.</p></aside>
-          <div class="chart-collection"><div class="chart-collection-heading"><div><span class="eyebrow">FINISHED WORK / NEWEST FIRST</span><h2 id="chart-agent-title">Every agent gets a place.</h2><span id="chart-agent-role" class="muted"></span></div><span id="chart-count" class="count-pill">0</span></div><div id="chart-grid" class="chart-grid"></div></div>
+          <div class="chart-collection"><div class="chart-collection-heading"><div><span class="eyebrow">FINISHED WORK / NEWEST FIRST</span><h2 id="chart-agent-title">Every agent gets a place.</h2><span id="chart-agent-role" class="muted"></span></div><div class="chart-heading-actions"><button id="chart-rename" class="quiet rename-agent" hidden>Rename</button><span id="chart-count" class="count-pill">0</span></div></div><div id="chart-grid" class="chart-grid"></div></div>
         </div><p class="gallery-note">Agent-authored HTML, with styles and interactions. Previews run in isolated frames · up to 2 MiB per document.</p>
       </section>
       <div id="empty" class="empty-welcome" hidden>
@@ -337,6 +337,20 @@
           <button type="button" class="quiet" data-close>Cancel</button
           ><button class="primary">Add agent ↗</button>
         </div>
+      </form>
+    </dialog>
+    <dialog id="rename-dialog" aria-labelledby="rename-title">
+      <form id="rename-form">
+        <div class="eyebrow">AGENT IDENTITY</div>
+        <h2 id="rename-title">Rename agent</h2>
+        <p class="rename-note">Change the display name. The agent ID, messages, and dashboards stay connected.</p>
+        <p id="rename-agent-id" class="rename-id mono"></p>
+        <label for="rename-name">Display name</label>
+        <input id="rename-name" name="name" required maxlength="100" autocomplete="off" />
+        <p class="rename-note">Saved in history. Replay shows the name used at that point.</p>
+        <p id="rename-demo-note" class="rename-note" hidden>Public demo changes last until you reload this page.</p>
+        <p id="rename-error" class="rename-error" role="alert" hidden></p>
+        <div class="dialog-actions"><button type="button" class="quiet" data-close>Cancel</button><button id="rename-save" class="primary">Save name</button></div>
       </form>
     </dialog>
     <dialog id="chart-dialog" class="chart-dialog" aria-labelledby="chart-viewer-title"><div class="chart-dialog-head"><h2 id="chart-viewer-title"></h2><button id="chart-close" class="quiet" data-close>Close ×</button></div><div id="chart-viewer"></div></dialog>

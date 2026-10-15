@@ -32,13 +32,22 @@ export function agentRecord(state, events, agentId) {
 /** Navigation landmarks only. They never project future state into the world. */
 export function checkpoints(events) {
   return events.flatMap((e, index) => {
-    if (!["run.created", "agent.registered", "message.sent", "artifact.created", "run.finished"].includes(e.type)) return [];
+    if (!["run.created", "agent.registered", "agent.renamed", "message.sent", "artifact.created", "run.finished"].includes(e.type)) return [];
     const p = e.payload;
     const label = e.type === "run.created" ? "Mission start"
       : e.type === "run.finished" ? `Run ${p.status}`
       : e.type === "agent.registered" ? `${p.name} joins`
+      : e.type === "agent.renamed" ? `${p.previousName} → ${p.name}`
       : e.type === "artifact.created" ? `${p.name} · v${p.version || 1}`
       : p.replyTo ? "Reply recorded" : "New handoff";
     return [{ index, event: e, label }];
   });
+}
+
+/** Skip idle gaps between post-execution metadata changes during playback. */
+export function replayClock(events, cursor, time) {
+  const end = events.findIndex((event) => event.type === "run.finished");
+  if (end >= 0 && events[end].timestamp <= time && cursor + 1 < events.length)
+    return Math.max(time, events[Math.max(end + 1, cursor + 1)]?.timestamp ?? time);
+  return time;
 }

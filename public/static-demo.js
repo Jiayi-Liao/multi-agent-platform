@@ -19,6 +19,7 @@ export class StaticDemo {
         structuredClone(sample.events),
       ]),
     );
+    this.templates = new Map([...this.runs].map(([id, events]) => [id, structuredClone(events)]));
     this.listeners = new Map();
     this.jobs = new Map();
     this.serial = 0;
@@ -52,6 +53,25 @@ export class StaticDemo {
         );
       return this.launch();
     }
+    const rename = route.match(/^\/api\/runs\/([^/]+)\/agents\/([^/]+)\/rename$/);
+    if (rename && data !== undefined) {
+      const events = this.runs.get(rename[1]);
+      if (!events) throw new Error("Sample run not found.");
+      const agentId = decodeURIComponent(rename[2]), agents = this.project(events).agents;
+      if (!Object.hasOwn(agents, agentId)) throw new Error("Agent not found.");
+      if (typeof data.name !== "string" || !data.name.trim() || data.name.length > 100)
+        throw new Error("name must be a non-empty string (max 100 characters).");
+      const agent = agents[agentId], name = data.name.trim();
+      if (name !== agent.name) {
+        const event = { id: `${rename[1]}-rename-${++this.serial}`, runId: rename[1],
+          seq: events.at(-1).seq + 1, timestamp: Math.max(this.now(), events.at(-1).timestamp),
+          type: "agent.renamed", payload: { agentId, previousName: agent.name, name } };
+        events.push(event);
+        for (const listener of this.listeners.get(rename[1]) || [])
+          listener.onmessage?.({ data: JSON.stringify(event) });
+      }
+      return { ...agent, name };
+    }
     const match = route.match(/^\/api\/runs\/([^/]+)(?:\/(export))?$/);
     if (match && data === undefined) {
       const events = this.runs.get(match[1]);
@@ -67,7 +87,7 @@ export class StaticDemo {
     );
   }
   launch(templateId = "sample-rewrite") {
-    const template = this.runs.get(templateId);
+    const template = this.templates.get(templateId);
     if (!template) throw new Error("Sample run not found.");
     const id = `browser-demo-${++this.serial}`;
     const start = this.now();
@@ -86,7 +106,8 @@ export class StaticDemo {
     this.runs.set(id, events);
     let index = 4;
     const next = () => {
-      const event = all[index++];
+      const event = { ...all[index++], seq: events.at(-1).seq + 1 };
+      event.timestamp = Math.max(event.timestamp, events.at(-1).timestamp);
       events.push(event);
       for (const listener of this.listeners.get(id) || [])
         listener.onmessage?.({ data: JSON.stringify(event) });

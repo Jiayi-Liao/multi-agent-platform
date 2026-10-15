@@ -412,7 +412,7 @@
   " to download it.": "即可下载。",
   "to download it.": "即可下载。",
   "Start the deterministic two-agent chart demo with": "使用以下请求体启动双 Agent 图表演示：",
-  "Connect your agents with ten methods": "通过十个方法接入智能体",
+  "Connect your agents with eleven methods": "通过十一个方法接入智能体",
   "at most 128,000 bytes (chart submissions allow 3 MiB).": "最多 128,000 字节（图片提交允许 3 MiB）。",
   "Agent HTML dashboards": "Agent HTML 看板",
   "Each agent has a place for its HTML dashboards. Open a preview, interact with its charts, or download the source.": "每个 Agent 都有自己的 HTML 看板位置。打开预览、操作图表，也可以下载源码。",
@@ -451,7 +451,27 @@
   "Register the run and agent first. Each HTML document is limited to 2 MiB UTF-8; chart submissions allow a 3 MiB JSON body. Finished runs reject new submissions. Inline CSS, JavaScript, SVG and canvas work in the interactive viewer; bundle libraries and data inline.": "请先注册 run 和 Agent。每份 HTML 最多 2 MiB UTF-8，提交时 JSON 请求最多 3 MiB。结束的运行不再接收提交。预览支持内联 CSS、JavaScript、SVG 和 canvas，请将依赖与数据内联。",
   "HTML runs in an isolated iframe with scripts enabled and no same-origin access. External scripts, fetch/XHR, nested frames and forms are blocked. Local document responses also enforce sandboxing when opened directly. Agent HTML is never inserted into the platform DOM.": "HTML 在独立 iframe 中运行，允许脚本交互，不授予同源访问。外部脚本、fetch/XHR、嵌套页面和表单均被阻止。本地文档直接打开时也受沙箱隔离。Agent HTML 不会插入平台本身的 DOM。",
   "The source and artifact event are saved together in SQLite. SSE sends metadata; documents load through run-scoped URLs. JSON exports contain document IDs and metadata, not HTML source. Download HTML separately. Pages includes only bundled synthetic dashboards.": "源码与 artifact 事件一同保存到 SQLite。SSE 发送元数据，文档通过同 run 地址加载。JSON 导出包含文档 ID 和元信息，不含 HTML 源码，请单独下载 HTML。Pages 仅包含模拟看板。",
-  "and a request body of at most 128,000 bytes (HTML chart submissions allow 3 MiB).": "，请求体最多 128,000 字节（HTML 提交允许 3 MiB）。"
+  "and a request body of at most 128,000 bytes (HTML chart submissions allow 3 MiB).": "，请求体最多 128,000 字节（HTML 提交允许 3 MiB）。",
+  "Rename": "改名",
+  "Rename agent": "修改 Agent 名字",
+  "AGENT IDENTITY": "AGENT 身份",
+  "Display name": "显示名字",
+  "Save name": "保存名字",
+  "Change display name": "修改显示名字",
+  "Return to live to rename agents": "返回最新状态后可修改名字",
+  "Enter a name.": "请输入名字。",
+  "Agent renamed.": "Agent 名字已修改。",
+  "Change the display name. The agent ID, messages, and dashboards stay connected.": "修改显示名字。Agent ID、消息和看板的关联保持不变。",
+  "Saved in history. Replay shows the name used at that point.": "改名会保存到历史中。回放时显示当时使用的名字。",
+  "Public demo changes last until you reload this page.": "公开演示中的改名仅保留至页面刷新。",
+  "{0} renamed to {1}": "{0} 改名为 {1}",
+  "Agent ID unchanged: {0}": "Agent ID 保持不变：{0}",
+  "Change display name:": "修改显示名字：",
+  "Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.": "名字会去掉首尾空白，不能为空，最多 100 个字符。ID 和路由保持不变。",
+  "Finished execution is read-only; agent display names can still be changed through the rename endpoint.": "已结束任务的执行记录为只读；仍可通过改名接口修改 Agent 显示名字。",
+  "Choose Rename in Overview, Agent crew, or Dashboard. Renames append agent.renamed events with agentId, previousName, and name. Replay shows the name at that point; finished runs keep their terminal status and execution duration. Local changes persist in SQLite. Public demo changes reset on reload.": "在总览、Agent 团队或看板中点击改名。改名会追加 agent.renamed 事件，包含 agentId、previousName 和 name。回放显示当时使用的名字；已结束任务的最终状态和执行时长保持不变。本地改名保存在 SQLite 中，公开演示的改名在刷新后重置。",
+  "values when retrying. Identical messages are idempotent; conflicting content returns 409. A conversation belongs to two participants within a single run. Resolve all outstanding replies and running tools before completing a run successfully. Finished execution is read-only; agent display names can still be changed through the rename endpoint.": "。相同消息可幂等重试，内容冲突返回 409。一个对话仅属于同一次运行中的两位参与者。成功完成运行前，必须处理所有待回复消息和运行中的工具。已结束任务的执行记录为只读，仍可通过改名接口修改 Agent 显示名字。",
+  ". Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.": "。名字会去掉首尾空白，不能为空，最多 100 个字符。ID 和路由保持不变。"
 };
   zh["JUMP TO A CHAPTER · NEWEST FIRST"] = "跳转到章节 · 最新在前";
   const key = "relay-language";

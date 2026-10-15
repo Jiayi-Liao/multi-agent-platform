@@ -39,6 +39,11 @@ export class PlatformClient {
     this.agentId = agent.id;
     return agent;
   }
+  /** Change this agent's display name without changing its routing ID. */
+  rename(name) {
+    if (!this.agentId) throw new Error("agentId is required.");
+    return this.request(this.path(`/agents/${encodeURIComponent(this.agentId)}/rename`), { name });
+  }
   send(toAgentId, content, options = {}) {
     return this.request(this.path("/messages"), {
       ...options,
