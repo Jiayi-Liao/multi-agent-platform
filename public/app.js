@@ -1,9 +1,13 @@
 import { project, terminalMessages } from "/state.js";
-import { agentRecord, checkpoints } from "/history.js";
+import { agentRecord, checkpoints, newestFirst } from "/history.js";
 import { AgentWorld } from "/world.js";
 import { createTransport } from "/transport.js";
+const { t, locale, formatTimestamp } = window.RelayI18n;
+// Capture authored UI before any runtime content can enter the DOM.
+await window.RelayI18n.ready;
 const transport = await createTransport(project);
 const staticDemo = transport.staticDemo;
+let codexEnabled = false;
 const $ = (id) => document.getElementById(id);
 const esc = (value) =>
   String(value ?? "").replace(
@@ -61,10 +65,11 @@ const firstTime = () => events[0]?.timestamp || 0;
 const lastTime = () => events.at(-1)?.timestamp || firstTime();
 const color = (id) =>
   palette[Math.max(0, Object.keys(state.agents).indexOf(id)) % palette.length];
-const name = (id) => state.agents[id]?.name || id || "System";
+const name = (id) => state.agents[id]?.name || id || t("System");
 function connection(text, ok = false) {
   connected = ok;
-  $("connection").textContent = text;
+  $("connection").textContent = t(text);
+  $("connection").dataset.copy = text;
   document.querySelector(".connection-dot").style.background = ok
     ? "var(--lime)"
     : "var(--orange)";
@@ -79,10 +84,10 @@ function renderRuns() {
     ? runs
         .map(
           (r) =>
-            `<button class="run-item ${r.id === runId ? "selected" : ""}" data-run="${esc(r.id)}"><strong>${esc(r.title)}</strong><small><span>${esc(r.status.toUpperCase())} · ${r.agentCount} agents</span><span>${new Date(r.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span></small></button>`,
+            `<button class="run-item ${r.id === runId ? "selected" : ""}" data-run="${esc(r.id)}"><strong>${esc(r.title)}</strong><small><span>${esc(t(r.status).toUpperCase())} · ${t("{0} agents", r.agentCount)}</span><span>${new Date(r.startedAt).toLocaleDateString(locale(), { month: "short", day: "numeric" })}</span></small></button>`,
         )
         .join("")
-    : '<div class="sidebar-empty">No runs yet.<br>Your history will appear here.</div>';
+    : `<div class="sidebar-empty">${t("No runs yet.")}<br>${t("Your history will appear here.")}</div>`;
 }
 async function selectRun(id) {
   const token = ++generation;
@@ -134,14 +139,14 @@ function visibleEvents() {
   return events.slice(0, cursor + 1);
 }
 function render() {
-  $("workspace").hidden = !runId;
-  $("empty").hidden = !!runId;
+  $("empty").hidden = !!runId || page === "dashboard";
+  $("workspace").hidden = !runId || page === "dashboard";
   if (!runId) return;
   state = project(visibleEvents());
   const run = state.run;
   $("run-title").textContent = run.title;
   $("run-id").textContent = run.id.slice(0, 8);
-  $("run-badge").textContent = run.status.toUpperCase();
+  $("run-badge").textContent = t(run.status).toUpperCase();
   $("run-badge").className = `badge ${run.status}`;
   const messages = Object.values(state.messages);
   $("stat-agents").textContent = String(
@@ -155,28 +160,28 @@ function render() {
   $("stat-elapsed").textContent = duration(
     (events[cursor]?.timestamp || firstTime()) - firstTime(),
   );
-  $("stat-events").textContent = `${cursor + 1} recorded events`;
+  $("stat-events").textContent = t("{0} recorded events", cursor + 1);
   $("view-mode").textContent = live
     ? staticDemo
-      ? "● DEMO"
-      : "● LIVE"
-    : "◷ REPLAY";
+      ? t("● DEMO")
+      : t("● LIVE")
+    : t("◷ REPLAY");
   $("view-mode").className = `live-tag ${live ? "" : "replay"}`;
   $("replay-label").textContent = live
     ? staticDemo
-      ? "Following synthetic events"
-      : "Following live events"
+      ? t("Following synthetic events")
+      : t("Following live events")
     : playing
-      ? "Playing recorded history"
-      : "Paused in history";
+      ? t("Playing recorded history")
+      : t("Paused in history");
   $("scrubber").max = Math.max(0, events.length - 1);
   $("scrubber").value = cursor;
-  $("cursor-label").textContent = `EVENT ${cursor + 1} / ${events.length}`;
+  $("cursor-label").textContent = t("EVENT {0} / {1}", cursor + 1, events.length);
   $("duration-label").textContent = duration(lastTime() - firstTime());
   $("play").textContent = playing ? "Ⅱ" : "▶";
   $("play").setAttribute(
     "aria-label",
-    playing ? "Pause replay" : "Play replay",
+    playing ? t("Pause replay") : t("Play replay"),
   );
   $("cancel").hidden = staticDemo || !live || run.status !== "running";
   $("finish").hidden =
@@ -187,17 +192,18 @@ function render() {
     ) || state.tools.some((t) => t.status === "running");
   $("add-agent").disabled = staticDemo || !live || run.status !== "running";
   $("crew-add").hidden = $("add-agent").disabled;
-  $("context-state").textContent = live ? (staticDemo ? "SYNTHETIC DEMO" : "FOLLOWING LIVE EVENTS") : `HISTORY / EVENT ${cursor + 1}`;
-  if (page !== "agents") renderGraph();
+  $("context-state").textContent = live ? t(staticDemo ? "SYNTHETIC DEMO" : "FOLLOWING LIVE EVENTS") : t("HISTORY / EVENT {0}", cursor + 1);
+  if (page !== "agents" && page !== "dashboard") renderGraph();
   renderMission();
   renderReplay();
   renderTimeline();
   renderInspector();
   if (page === "agents") renderAgents();
 }
-let page = ["overview", "replay", "agents"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
+let page = ["overview", "replay", "agents", "dashboard"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
 let profileTab = "history";
 const pageCopy = {
+  dashboard: ["Dashboard", "EXPERIMENT WORKSPACE / DESIGN IN PROGRESS", 'Your experiments.<br /><em>A shared canvas.</em>', "A planned workspace for agent-created dashboards, live metrics, and reproducible experiment history.", "FROM METRICS TO UNDERSTANDING"],
   overview: ["Overview", "MISSION CONTROL / MULTI-AGENT WORKSPACE", 'Small agents.<br /><em>Big picture.</em>', "A living world for your crew. Follow the handoffs, understand the work, and replay every turn.", "YOUR MISSION, AT A GLANCE"],
   replay: ["Replay studio", "REPLAY STUDIO / EVERY TURN, PRESERVED", 'Go back.<br /><em>See how it happened.</em>', "Step through the story. Each moment restores the crew, messages, and artifacts exactly as they were.", "ONE EVENT AT A TIME"],
   agents: ["Agent crew", "CREW DIRECTORY / ANY ROLE, ONE MISSION", 'Meet the minds.<br /><em>Trace the work.</em>', "Explore each agent’s activity, conversations, tools, and output—all in one continuous record.", "THE PEOPLE BEHIND THE PACKETS"],
@@ -207,20 +213,23 @@ function setPage(next) {
   page = pageCopy[next] ? next : "overview";
   document.body.dataset.page = page;
   if (changed) window.scrollTo({ top: 0 });
-  if (page === "agents") playing = false;
+  if (page === "agents" || page === "dashboard") playing = false;
   const copy = pageCopy[page];
-  $("breadcrumb-view").textContent = copy[0];
-  $("page-eyebrow").textContent = copy[1];
-  $("page-title").innerHTML = copy[2];
-  $("page-description").textContent = copy[3];
-  $("context-label").textContent = copy[4];
+  $("breadcrumb-view").textContent = t(copy[0]);
+  $("page-eyebrow").textContent = t(copy[1]);
+  $("page-title").innerHTML = t(copy[2]);
+  $("page-description").textContent = t(copy[3]);
+  $("context-label").textContent = t(copy[4]);
   document.querySelectorAll("[data-page-link]").forEach((link) => {
     if (link.dataset.pageLink === page) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
   $("agent-page").hidden = page !== "agents";
+  $("dashboard-page").hidden = page !== "dashboard";
+  document.querySelector(".heading-actions").hidden = page === "dashboard";
+  $("empty").hidden = !!runId || page === "dashboard";
   document.querySelector(".workspace-grid").hidden = page === "agents";
-  if (runId) render();
+  render();
 }
 window.addEventListener("hashchange", () => {
   const next = location.hash.slice(1);
@@ -261,7 +270,7 @@ function renderGraph() {
   });
 }
 function eventInfo(e, context = state) {
-  const name = (id) => context.agents[id]?.name || id || "System";
+  const name = (id) => context.agents[id]?.name || id || t("System");
   const p = e.payload;
   if (e.type === "message.sent")
     return {
@@ -275,7 +284,7 @@ function eventInfo(e, context = state) {
   if (e.type === "message.acknowledged") {
     const m = context.messages[p.messageId];
     return {
-      title: `${name(p.actorId)} · ${p.state}`,
+      title: `${name(p.actorId)} · ${t(p.state)}`,
       text: m?.content || "",
       kind: "message",
       symbol: "✓",
@@ -284,15 +293,15 @@ function eventInfo(e, context = state) {
   }
   if (e.type === "agent.registered")
     return {
-      title: `${p.name} joined`,
-      text: `Role: ${p.role}${p.parentId ? ` · Parent: ${name(p.parentId)}` : ""}`,
+      title: t("{0} joined", p.name),
+      text: `${t("Role")}: ${p.role}${p.parentId ? ` · ${t("Parent")}: ${name(p.parentId)}` : ""}`,
       kind: "agent",
       symbol: "+",
       agentId: p.id,
     };
   if (e.type === "agent.status")
     return {
-      title: `${name(p.agentId)} · ${p.status}`,
+      title: `${name(p.agentId)} · ${t(p.status)}`,
       text: p.activity,
       kind: "agent",
       symbol: "○",
@@ -300,7 +309,7 @@ function eventInfo(e, context = state) {
     };
   if (e.type.startsWith("tool."))
     return {
-      title: `${name(p.agentId)} · ${e.type === "tool.started" ? p.name : "Tool finished"}`,
+      title: `${name(p.agentId)} · ${e.type === "tool.started" ? p.name : t("Tool finished")}`,
       text: p.error || p.output || p.input,
       kind: "tool",
       symbol: "⌘",
@@ -323,7 +332,7 @@ function eventInfo(e, context = state) {
       agentId: p.agentId,
     };
   return {
-    title: e.type === "run.created" ? "Run started" : `Run ${p.status}`,
+    title: e.type === "run.created" ? t("Run started") : t("Run {0}", t(p.status)),
     text: p.error || context.run.title,
     kind: "run",
     symbol: "◎",
@@ -336,7 +345,7 @@ function renderTimeline() {
     positions = new Map(events.map((e, i) => [e.id, i])),
     query = $("search").value.toLowerCase(),
     kind = $("event-kind").value;
-  const filtered = journal.filter((e) => {
+  const filtered = newestFirst(journal).filter((e) => {
     const info = eventInfo(e, recorded),
       p = e.payload;
     const m =
@@ -380,56 +389,69 @@ function renderTimeline() {
         .map((e) => {
           const future = positions.get(e.id) > cursor;
           const info = eventInfo(e, future ? recorded : state);
-          return `<button class="event-row ${selection?.eventId === e.id ? "selected" : ""} ${future ? "future-event" : ""} ${events[cursor]?.id === e.id ? "current-event" : ""}" data-event="${esc(e.id)}" aria-label="${esc(`${duration(e.timestamp - firstTime())}. ${info.title}. ${info.kind} event`)}" ${page === "replay" ? `data-seek="${positions.get(e.id)}"` : ""}><span class="event-time">${duration(e.timestamp - firstTime())}</span><span class="event-symbol ${info.kind}">${info.symbol}</span><div class="event-main"><header>${esc(info.title)}<small>${esc(future ? "ahead" : info.status || info.kind)}</small></header><p>${esc(info.text || "")}</p></div></button>`;
+          return `<button class="event-row ${selection?.eventId === e.id ? "selected" : ""} ${future ? "future-event" : ""} ${events[cursor]?.id === e.id ? "current-event" : ""}" data-event="${esc(e.id)}" aria-label="${esc(`${duration(e.timestamp - firstTime())}. ${info.title}. ${t(info.kind)} ${t("event")}`)}" ${page === "replay" ? `data-seek="${positions.get(e.id)}"` : ""}><time class="event-time" title="${esc(formatTimestamp(e.timestamp))}">${duration(e.timestamp - firstTime())}</time><span class="event-symbol ${info.kind}">${info.symbol}</span><div class="event-main"><header>${esc(info.title)}<small>${esc(t(future ? "ahead" : info.status || info.kind))}</small></header><p>${esc(info.text || "")}</p></div></button>`;
         })
         .join("")
-    : '<p class="no-events">No events match this view.</p>';
+    : `<p class="no-events">${t("No events match this view.")}</p>`;
 }
 function robot(id, large = false) {
   return `<span class="bot-avatar ${large ? "large" : ""}" style="--crew-color:${color(id)}" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><path d="M40 12v9m-5-12h10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="16" y="24" width="48" height="35" rx="11" fill="currentColor"/><rect x="22" y="31" width="36" height="20" rx="7" fill="#24392e"/><circle cx="32" cy="41" r="4" fill="#edf4d9"/><circle cx="48" cy="41" r="4" fill="#edf4d9"/><path d="M28 63h24M12 37v9m56-9v9" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span>`;
 }
+function artifactTime(item) {
+  const date = new Date(item.timestamp);
+  const valid = Number.isFinite(date.getTime());
+  return `<div class="artifact-time"><time ${valid ? `datetime="${date.toISOString()}" title="${date.toISOString()}"` : ""}>${esc(formatTimestamp(item.timestamp))}</time><span>${duration(item.timestamp - firstTime())} · #${item.eventSeq ?? "—"}</span></div>`;
+}
+function chapterLabel({ event: e }) {
+  const p = e.payload;
+  return e.type === "run.created" ? t("Mission start")
+    : e.type === "run.finished" ? t("Run {0}", t(p.status))
+    : e.type === "agent.registered" ? t("{0} joins", p.name)
+    : e.type === "artifact.created" ? `${p.name} · v${p.version || 1}`
+    : t(p.replyTo ? "Reply recorded" : "New handoff");
+}
 function renderMission() {
-  const artifact = state.artifacts.at(-1);
+  const artifact = newestFirst(state.artifacts)[0];
   const current = events[cursor], info = current && eventInfo(current);
   $("mission-summary").innerHTML = artifact
-    ? `<h3>${esc(artifact.name)} <span>v${artifact.version || 1}</span></h3><p>${esc(artifact.content)}</p><span class="brief-meta">OUTPUT BY ${esc(name(artifact.agentId))}</span>`
-    : `<h3>${esc(info?.title || "Waiting for the first handoff")}</h3><p>${esc(info?.text || "Your crew’s activity will appear as the mission unfolds.")}</p>`;
-  $("crew-strip").innerHTML = Object.values(state.agents).map((a) => `<button data-profile-agent="${esc(a.id)}" class="crew-chip">${robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><span class="crew-dot ${esc(a.status)}" title="${esc(a.status)}"></span></button>`).join("");
+    ? `<h3>${esc(artifact.name)} <span>v${artifact.version || 1}</span></h3><p>${esc(artifact.content)}</p><span class="brief-meta">${t("OUTPUT BY")} ${esc(name(artifact.agentId))}</span>${artifactTime(artifact)}`
+    : `<h3>${esc(info?.title || t("Waiting for the first handoff"))}</h3><p>${esc(info?.text || t("Your crew’s activity will appear as the mission unfolds."))}</p>`;
+  $("crew-strip").innerHTML = Object.values(state.agents).map((a) => `<button data-profile-agent="${esc(a.id)}" class="crew-chip">${robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><span class="crew-dot ${esc(a.status)}" title="${esc(t(a.status))}"></span></button>`).join("");
 }
 function renderReplay() {
   const event = events[cursor];
   if (!event) return;
   const info = eventInfo(event);
-  $("replay-moment").innerHTML = `<div class="moment-time"><strong>${duration(event.timestamp - firstTime())}</strong><span>EVENT ${String(cursor + 1).padStart(2, "0")} / ${events.length}</span></div><div class="moment-story"><span class="eyebrow">${esc(info.kind.toUpperCase())} / ${playing ? "PLAYING" : live ? "LATEST STATE" : "PAUSED"}</span><h4>${esc(info.title)}</h4><p>${esc(info.text || "The mission is taking shape.")}</p></div><span class="moment-symbol" aria-hidden="true">${info.symbol}</span>`;
-  $("checkpoints").innerHTML = checkpoints(events).map((c) => `<button data-seek="${c.index}" class="checkpoint ${c.index <= cursor ? "visited" : ""} ${c.index === cursor ? "active" : ""}" ${c.index === cursor ? 'aria-current="step"' : ""}><span>${duration(c.event.timestamp - firstTime())}</span><strong>${esc(c.label)}</strong><small>#${c.index + 1}</small></button>`).join("");
+  $("replay-moment").innerHTML = `<div class="moment-time"><strong>${duration(event.timestamp - firstTime())}</strong><span>${t("EVENT {0} / {1}", String(cursor + 1).padStart(2, "0"), events.length)}</span></div><div class="moment-story"><span class="eyebrow">${esc(t(info.kind).toUpperCase())} / ${playing ? t("PLAYING") : live ? t("LATEST STATE") : t("PAUSED")}</span><h4>${esc(info.title)}</h4><p>${esc(info.text || t("The mission is taking shape."))}</p></div><span class="moment-symbol" aria-hidden="true">${info.symbol}</span>`;
+  $("checkpoints").innerHTML = checkpoints(events).reverse().map((c) => `<button data-seek="${c.index}" class="checkpoint ${c.index <= cursor ? "visited" : ""} ${c.index === cursor ? "active" : ""}" ${c.index === cursor ? 'aria-current="step"' : ""}><span>${duration(c.event.timestamp - firstTime())}</span><strong>${esc(chapterLabel(c))}</strong><small>#${c.index + 1}</small></button>`).join("");
 }
 function renderAgents() {
   const agents = Object.values(state.agents), query = $("agent-search").value.trim().toLowerCase();
-  $("directory-count").textContent = `${agents.length} ${agents.length === 1 ? "agent" : "agents"} at this point`;
+  $("directory-count").textContent = t("{0} agents at this point", agents.length);
   const agent = state.agents[selection?.agentId] || agents[0];
-  $("agent-directory").innerHTML = agents.filter((a) => `${a.name} ${a.role}`.toLowerCase().includes(query)).map((a) => `<button class="crew-card ${a.id === agent?.id ? "selected" : ""}" data-profile-agent="${esc(a.id)}" aria-pressed="${a.id === agent?.id}">${robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><span class="crew-dot ${esc(a.status)}" title="${esc(a.status)}"></span></button>`).join("") || '<p class="no-events">No agents match this view.</p>';
+  $("agent-directory").innerHTML = agents.filter((a) => `${a.name} ${a.role}`.toLowerCase().includes(query)).map((a) => `<button class="crew-card ${a.id === agent?.id ? "selected" : ""}" data-profile-agent="${esc(a.id)}" aria-pressed="${a.id === agent?.id}">${robot(a.id)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}</small></span><span class="crew-dot ${esc(a.status)}" title="${esc(t(a.status))}"></span></button>`).join("") || `<p class="no-events">${t("No agents match this view.")}</p>`;
   const el = $("agent-profile");
   if (el.contains(document.activeElement) && document.activeElement.matches("input,textarea,select")) return;
-  if (!agent) { el.innerHTML = '<div class="profile-empty"><span>◎</span><h3>The crew hasn’t arrived yet.</h3><p>Move forward in replay to see agents join this mission.</p><a href="#replay" data-page-link="replay">Open replay studio ↗</a></div>'; return; }
+  if (!agent) { el.innerHTML = `<div class="profile-empty"><span>◎</span><h3>${t("The crew hasn’t arrived yet.")}</h3><p>${t("Move forward in replay to see agents join this mission.")}</p><a href="#replay" data-page-link="replay">${t("Open replay studio ↗")}</a></div>`; return; }
   const a = agent, record = agentRecord(state, visibleEvents(), a.id);
   const positions = new Map(events.map((e, i) => [e.id, i]));
   const sends = new Map(events.flatMap((e, i) => e.type === "message.sent" ? [[e.payload.id, i]] : []));
   const metrics = [[record.sent.length, "SENT"], [record.received.length, "RECEIVED"], [record.artifacts.length, "ARTIFACTS"], [record.tools.length, "TOOLS"]];
   const tabs = [["history", "History", record.history.length], ["messages", "Messages", record.messages.length], ["artifacts", "Artifacts", record.artifacts.length], ["tools", "Tools", record.tools.length]];
   let content;
-  if (profileTab === "messages") content = record.messages.map((m) => `<button class="profile-message" data-seek="${sends.get(m.id)}"><header><strong>${esc(name(m.fromAgentId))} <span>→</span> ${esc(name(m.toAgentId))}</strong><span class="detail-tag">${esc(m.status)}</span></header><p>${esc(m.content)}</p><small>${duration(m.timestamp - firstTime())} · ${m.fromAgentId === a.id ? "OUTGOING" : "INCOMING"} · Open in replay ↗</small></button>`).join("");
-  else if (profileTab === "artifacts") content = record.artifacts.map((x) => `<div class="profile-output"><span class="eyebrow">ARTIFACT / VERSION ${x.version || 1}</span><h3>${esc(x.name)}</h3><p>${esc(x.content)}</p><small>${duration(x.timestamp - firstTime())} INTO THE MISSION</small></div>`).join("");
-  else if (profileTab === "tools") content = record.tools.map((t) => `<div class="profile-output"><span class="eyebrow">TOOL / ${esc(t.status.toUpperCase())}</span><h3>${esc(t.name)}</h3><div class="detail-label">Input</div><pre>${esc(t.input || "No input recorded")}</pre><div class="detail-label">Output</div><pre>${esc(t.error || t.output || "No output at this point")}</pre></div>`).join("");
+  if (profileTab === "messages") content = record.messages.map((m) => `<button class="profile-message" data-seek="${sends.get(m.id)}"><header><strong>${esc(name(m.fromAgentId))} <span>→</span> ${esc(name(m.toAgentId))}</strong><span class="detail-tag">${esc(t(m.status))}</span></header><p>${esc(m.content)}</p><small>${duration(m.timestamp - firstTime())} · ${t(m.fromAgentId === a.id ? "OUTGOING" : "INCOMING")} · ${t("Open in replay ↗")}</small></button>`).join("");
+  else if (profileTab === "artifacts") content = record.artifacts.map((x) => `<div class="profile-output"><span class="eyebrow">${t("ARTIFACT / VERSION {0}", x.version || 1)}</span><h3>${esc(x.name)}</h3><p>${esc(x.content)}</p>${artifactTime(x)}</div>`).join("");
+  else if (profileTab === "tools") content = record.tools.map((tool) => `<div class="profile-output"><span class="eyebrow">${t("TOOL")} / ${esc(t(tool.status).toUpperCase())}</span><h3>${esc(tool.name)}</h3>${artifactTime({ ...tool, timestamp: tool.finishedAt ?? tool.timestamp })}<div class="detail-label">${t("Input")}</div><pre>${esc(tool.input || t("No input recorded"))}</pre><div class="detail-label">${t("Output")}</div><pre>${esc(tool.error || tool.output || t("No output at this point"))}</pre></div>`).join("");
   else content = record.history.map((e) => { const info = eventInfo(e); return `<button class="profile-history-row" data-seek="${positions.get(e.id)}"><time>${duration(e.timestamp - firstTime())}</time><span class="history-dot ${info.kind}"></span><span><strong>${esc(info.title)}</strong><p>${esc(info.text || "")}</p></span><small>#${e.seq} ↗</small></button>`; }).join("");
-  el.innerHTML = `<div class="profile-cover"><span class="eyebrow">CREWMATE / ${esc(a.role.toUpperCase())}</span><span class="profile-number">${String(agents.indexOf(a) + 1).padStart(2, "0")}</span></div><div class="profile-identity">${robot(a.id, true)}<div><h2>${esc(a.name)}</h2><span class="profile-status"><i class="crew-dot ${esc(a.status)}"></i>${esc(a.status)} · ${esc(a.role)}</span></div><button class="quiet" data-seek="${events.findIndex((e) => e.type === "agent.registered" && e.payload.id === a.id)}">First appearance ↗</button></div><div class="profile-activity"><span class="eyebrow">CURRENT ACTIVITY</span><p>${esc(a.activity || "Ready for the next handoff.")}</p><div class="profile-meta"><span>Parent <strong>${esc(a.parentId ? name(a.parentId) : "Root agent")}</strong></span><span class="mono">${esc(a.id)}</span></div></div><div class="profile-metrics">${metrics.map(([n, label]) => `<div><strong>${String(n).padStart(2, "0")}</strong><span>${label}</span></div>`).join("")}</div><nav class="profile-tabs" aria-label="Agent records">${tabs.map(([id, label, count]) => `<button data-profile-tab="${id}" aria-label="${label} (${count})" aria-pressed="${profileTab === id}">${label}<span>${count}</span></button>`).join("")}</nav><div class="profile-records">${content || `<div class="profile-empty"><h3>No ${esc(profileTab)} at this point.</h3><p>This view follows the replay clock. New records appear as the mission progresses.</p></div>`}</div>${compose(a.id)}`;
+  el.innerHTML = `<div class="profile-cover"><span class="eyebrow">${t("CREWMATE /")} ${esc(a.role.toUpperCase())}</span><span class="profile-number">${String(agents.indexOf(a) + 1).padStart(2, "0")}</span></div><div class="profile-identity">${robot(a.id, true)}<div><h2>${esc(a.name)}</h2><span class="profile-status"><i class="crew-dot ${esc(a.status)}"></i>${esc(t(a.status))} · ${esc(a.role)}</span></div><button class="quiet" data-seek="${events.findIndex((e) => e.type === "agent.registered" && e.payload.id === a.id)}">${t("First appearance \u2197")}</button></div><div class="profile-activity"><span class="eyebrow">${t("CURRENT ACTIVITY")}</span><p>${esc(a.activity || t("Ready for the next handoff."))}</p><div class="profile-meta"><span>${t("Parent")} <strong>${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</strong></span><span class="mono">${esc(a.id)}</span></div></div><div class="profile-metrics">${metrics.map(([n, label]) => `<div><strong>${String(n).padStart(2, "0")}</strong><span>${t(label)}</span></div>`).join("")}</div><nav class="profile-tabs" aria-label="${t("Agent records")}">${tabs.map(([id, label, count]) => `<button data-profile-tab="${id}" aria-label="${t(label)} (${count})" aria-pressed="${profileTab === id}">${t(label)}<span>${count}</span></button>`).join("")}</nav><div class="profile-records">${content || `<div class="profile-empty"><h3>${t("No {0} at this point.", t(profileTab))}</h3><p>${t("This view follows the replay clock. New records appear as the mission progresses.")}</p></div>`}</div>${compose(a.id)}`;
 }
 
 function compose(agentId, original = null) {
   if (staticDemo || !live || state.run.status !== "running") return "";
   const peers = Object.values(state.agents).filter((a) => a.id !== agentId);
   if (!peers.length)
-    return '<p class="inspector-intro">Add another agent to exchange messages.</p>';
-  return `<form class="message-compose" id="message-form" data-to="${esc(agentId)}" ${original ? `data-reply="${esc(original.id)}"` : ""}><div class="eyebrow">${original ? "REPLY IN THIS CONVERSATION" : "SEND A MESSAGE"}</div>${original ? `<div class="detail-meta">${esc(name(agentId))} → ${esc(name(original.fromAgentId))}</div>` : `<label>From<select name="from">${peers.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("")}</select></label>`}<label>Message<textarea name="content" required maxlength="32000" placeholder="${original ? "Respond to this message…" : "Assign work or share context…"}"></textarea></label>${original ? "" : '<label><input type="checkbox" name="expectsResponse" checked> Expect a reply</label>'}<button class="primary">${original ? "Send reply" : "Send message"} ↗</button></form>`;
+    return `<p class="inspector-intro">${t("Add another agent to exchange messages.")}</p>`;
+  return `<form class="message-compose" id="message-form" data-to="${esc(agentId)}" ${original ? `data-reply="${esc(original.id)}"` : ""}><div class="eyebrow">${original ? t("REPLY IN THIS CONVERSATION") : t("SEND A MESSAGE")}</div>${original ? `<div class="detail-meta">${esc(name(agentId))} → ${esc(name(original.fromAgentId))}</div>` : `<label>${t("From")}<select name="from">${peers.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join("")}</select></label>`}<label>${t("Message")}<textarea name="content" required maxlength="32000" placeholder="${original ? t("Respond to this message…") : t("Assign work or share context…")}"></textarea></label>${original ? "" : `<label><input type="checkbox" name="expectsResponse" checked> ${t("Expect a reply")}</label>`}<button class="primary">${original ? t("Send reply") : t("Send message")} ↗</button></form>`;
 }
 function renderInspector() {
   if (
@@ -442,12 +464,12 @@ function renderInspector() {
   if (selection?.agentId && state.agents[selection.agentId]) {
     const a = state.agents[selection.agentId];
     const history = agentRecord(state, visibleEvents(), a.id).history;
-    el.innerHTML = `<div class="eyebrow">AGENT DETAILS</div><h4>${esc(a.name)}</h4><span class="detail-tag">${esc(a.role)} · ${esc(a.status)}</span><div class="detail-label">Current activity</div><div class="detail-body">${esc(a.activity || "Ready for work")}</div><div class="detail-label">Identity</div><div class="detail-meta">${esc(a.id)}<br>Parent: ${esc(a.parentId ? name(a.parentId) : "Root agent")}</div><a class="profile-link" href="#agents" data-profile-agent="${esc(a.id)}">Open full agent profile ↗</a><div class="detail-label">Agent history · ${history.length} events</div>${history.map((e) => `<button class="conversation-button" data-event="${esc(e.id)}">${esc(eventInfo(e).title)}<br><span class="muted">${esc((eventInfo(e).text || "").slice(0, 140))}</span></button>`).join("")}${compose(a.id)}`;
+    el.innerHTML = `<div class="eyebrow">${t("AGENT DETAILS")}</div><h4>${esc(a.name)}</h4><span class="detail-tag">${esc(a.role)} · ${esc(t(a.status))}</span><div class="detail-label">${t("Current activity")}</div><div class="detail-body">${esc(a.activity || t("Ready for work"))}</div><div class="detail-label">${t("Identity")}</div><div class="detail-meta">${esc(a.id)}<br>${t("Parent:")} ${esc(a.parentId ? name(a.parentId) : t("Root agent"))}</div><a class="profile-link" href="#agents" data-profile-agent="${esc(a.id)}">${t("Open full agent profile \u2197")}</a><div class="detail-label">${t("Agent history · {0} events", history.length)}</div>${history.map((e) => `<button class="conversation-button" data-event="${esc(e.id)}">${esc(eventInfo(e).title)}<br><span class="muted">${esc((eventInfo(e).text || "").slice(0, 140))}</span></button>`).join("")}${compose(a.id)}`;
     return;
   }
   const event = visibleEvents().find((e) => e.id === selection?.eventId);
   if (!event) {
-    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>Select an agent to explore its history.<br>Select a message to follow its conversation.<br>Move through playback to inspect an earlier state.</div><div class="detail-label">Run summary</div><div class="detail-meta">${esc(state.run.mode)} runtime<br>${events.length} ${staticDemo ? "synthetic events in browser" : "events saved locally"}<br>${connected ? (staticDemo ? "Synthetic browser stream connected" : "Live event stream connected") : "Connecting to event stream"}</div>${state.run.error ? `<div class="detail-label">Run stopped</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">Artifacts at this point</div>${state.artifacts.map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong><p>${esc(a.content)}</p></div>`).join("")}`;
+    el.innerHTML = `<div class="inspector-intro"><span class="big-arrow">↖</span>${t("Select an agent to explore its history.")}<br>${t("Select a message to follow its conversation.")}<br>${t("Move through playback to inspect an earlier state.")}</div><div class="detail-label">${t("Run summary")}</div><div class="detail-meta">${esc(state.run.mode)} ${t("runtime")}<br>${events.length} ${staticDemo ? t("synthetic events in browser") : t("events saved locally")}<br>${connected ? (staticDemo ? t("Synthetic browser stream connected") : t("Live event stream connected")) : t("Connecting to event stream")}</div>${state.run.error ? `<div class="detail-label">${t("Run stopped")}</div><div class="detail-body">${esc(state.run.error)}</div>` : ""}<div class="detail-label">${t("Artifacts at this point")}</div>${newestFirst(state.artifacts).map((a) => `<div class="artifact-card"><strong>${esc(a.name)} · v${a.version || 1}</strong>${artifactTime(a)}<p>${esc(a.content)}</p></div>`).join("")}`;
     return;
   }
   const p = event.payload,
@@ -458,7 +480,7 @@ function renderInspector() {
           ? state.messages[p.messageId]
           : null;
   if (m) {
-    const thread = Object.values(state.messages).filter(
+    const thread = newestFirst(Object.values(state.messages)).filter(
       (x) => x.conversationId === m.conversationId,
     );
     const canAck =
@@ -466,11 +488,11 @@ function renderInspector() {
       live &&
       state.run.status === "running" &&
       !terminalMessages.has(m.status);
-    el.innerHTML = `<div class="eyebrow">COMMUNICATION</div><h4>${esc(name(m.fromAgentId))} → ${esc(name(m.toAgentId))}</h4><span class="detail-tag">${esc(m.kind)} · ${esc(m.status)}</span><div class="detail-label">Message</div><div class="detail-body">${esc(m.content)}</div><div class="detail-label">Correlation</div><div class="detail-meta">Message: ${esc(m.id)}<br>Conversation: ${esc(m.conversationId)}<br>Reply to: ${esc(m.replyTo || "Conversation start")}</div><div class="detail-label">Delivery history</div><div class="ack-row"><span>queued</span><span>${duration(m.timestamp - firstTime())}</span></div>${m.acknowledgements.map((a) => `<div class="ack-row"><span>${esc(a.state)}</span><span>${duration(a.timestamp - firstTime())}</span></div>`).join("")}${canAck ? `<div class="detail-label">Recipient actions</div>${m.status === "queued" ? `<button class="quiet" data-ack="delivered" data-message="${esc(m.id)}">Mark delivered</button>` : ""}${m.status === "delivered" ? `<button class="quiet" data-ack="processing" data-message="${esc(m.id)}">Mark processing</button>` : ""}${!m.expectsResponse && m.status !== "queued" ? `<button class="quiet" data-ack="answered" data-message="${esc(m.id)}">Mark handled</button>` : ""}<button class="quiet danger" data-ack="failed" data-message="${esc(m.id)}">Mark failed</button>` : ""}<div class="detail-label">Conversation · ${thread.length} messages</div>${thread.map((x) => `<button class="conversation-button" data-message-event="${esc(x.id)}"><strong>${esc(name(x.fromAgentId))} → ${esc(name(x.toAgentId))}</strong><br>${esc(x.content.slice(0, 200))}</button>`).join("")}${m.status !== "failed" ? compose(m.toAgentId, m) : ""}`;
+    el.innerHTML = `<div class="eyebrow">${t("COMMUNICATION")}</div><h4>${esc(name(m.fromAgentId))} → ${esc(name(m.toAgentId))}</h4><span class="detail-tag">${esc(m.kind)} · ${esc(t(m.status))}</span><div class="detail-label">${t("Message")}</div><div class="detail-body">${esc(m.content)}</div><div class="detail-label">${t("Correlation")}</div><div class="detail-meta">${t("Message:")} ${esc(m.id)}<br>${t("Conversation:")} ${esc(m.conversationId)}<br>${t("Reply to:")} ${esc(m.replyTo || t("Conversation start"))}</div><div class="detail-label">${t("Delivery history")}</div>${newestFirst([{ state: "queued", timestamp: m.timestamp, eventSeq: m.eventSeq }, ...m.acknowledgements]).map((a) => `<div class="ack-row"><span>${esc(t(a.state))}</span><span>${duration(a.timestamp - firstTime())}</span></div>`).join("")}${canAck ? `<div class="detail-label">${t("Recipient actions")}</div>${m.status === "queued" ? `<button class="quiet" data-ack="delivered" data-message="${esc(m.id)}">${t("Mark delivered")}</button>` : ""}${m.status === "delivered" ? `<button class="quiet" data-ack="processing" data-message="${esc(m.id)}">${t("Mark processing")}</button>` : ""}${!m.expectsResponse && m.status !== "queued" ? `<button class="quiet" data-ack="answered" data-message="${esc(m.id)}">${t("Mark handled")}</button>` : ""}<button class="quiet danger" data-ack="failed" data-message="${esc(m.id)}">${t("Mark failed")}</button>` : ""}<div class="detail-label">${t("Conversation · {0} messages", thread.length)}</div>${thread.map((x) => `<button class="conversation-button" data-message-event="${esc(x.id)}"><strong>${esc(name(x.fromAgentId))} → ${esc(name(x.toAgentId))}</strong><br>${esc(x.content.slice(0, 200))}</button>`).join("")}${m.status !== "failed" ? compose(m.toAgentId, m) : ""}`;
     return;
   }
   const info = eventInfo(event);
-  el.innerHTML = `<div class="eyebrow">${esc(info.kind.toUpperCase())} EVENT</div><h4>${esc(info.title)}</h4><div class="detail-meta">${duration(event.timestamp - firstTime())} into run · event ${event.seq}</div><div class="detail-label">Recorded content</div><div class="detail-body">${esc(info.text || "")}</div><div class="detail-label">Event payload</div><pre class="detail-meta">${esc(JSON.stringify(p, null, 2))}</pre>`;
+  el.innerHTML = `<div class="eyebrow">${esc(t(info.kind).toUpperCase())} ${t("EVENT")}</div><h4>${esc(info.title)}</h4><div class="detail-meta">${artifactTime({ timestamp: event.timestamp, eventSeq: event.seq })}</div><div class="detail-label">${t("Recorded content")}</div><div class="detail-body">${esc(info.text || "")}</div><div class="detail-label">${t("Event payload")}</div><pre class="detail-meta">${esc(JSON.stringify(p, null, 2))}</pre>`;
 }
 function seek(index) {
   live = false;
@@ -628,7 +650,7 @@ async function launchDemo() {
     const run = await api("/api/demo", { mode: $("demo-mode").value });
     await refreshRuns();
     await selectRun(run.id);
-    toast("Demo launched. Watch the team work.");
+    toast(t("Demo launched. Watch the team work."));
   } finally {
     $("start-demo").disabled = false;
   }
@@ -651,7 +673,7 @@ $("run-form").onsubmit = act(async (e) => {
 $("crew-add").onclick = () => $("add-agent").click();
 $("add-agent").onclick = () => {
   $("parent-select").innerHTML =
-    '<option value="">Root agent</option>' +
+    `<option value="">${t("Root agent")}</option>` +
     Object.values(state.agents)
       .map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`)
       .join("");
@@ -693,7 +715,7 @@ document.addEventListener(
     await api(`/api/runs/${runId}/messages`, p);
     e.target.querySelector("textarea").value = "";
     e.target.querySelector("textarea").blur();
-    toast("Message recorded and queued for the recipient.");
+    toast(t("Message recorded and queued for the recipient."));
   }),
 );
 $("export").onclick = act(async () => {
@@ -713,11 +735,11 @@ $("export").onclick = act(async () => {
 });
 $("finish").onclick = act(async () => {
   await api(`/api/runs/${runId}/finish`, { status: "completed" });
-  toast("Run complete. Its history is ready for replay.");
+  toast(t("Run complete. Its history is ready for replay."));
 });
 $("cancel").onclick = act(async () => {
   await api(`/api/runs/${runId}/cancel`, {});
-  toast("Run stopped. Its history is preserved.");
+  toast(t("Run stopped. Its history is preserved."));
 });
 window.addEventListener("beforeunload", () => {
   source?.close();
@@ -729,28 +751,42 @@ setInterval(() => {
   if (!document.hidden)
     refreshRuns().catch(() => connection("Server unavailable"));
 }, 5000);
-await act(async () => {
+function applyModeCopy() {
+  document.querySelector(".plan-footer a").href = locale() === "zh-CN" ? "https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.zh-CN.md" : "https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.md";
+
+  const codex = $("demo-mode").querySelector('[value="codex"]');
+  if (codexEnabled && codex) codex.textContent = t("Codex CLI · real agents");
   if (staticDemo) {
-    $("new-run").textContent = "API & local setup ↗";
-    $("demo-mode").querySelector('[value="codex"]').remove();
+    $("new-run").textContent = t("API & local setup ↗");
+    $("demo-mode").querySelector('[value="codex"]')?.remove();
     $("demo-mode").querySelector("option").textContent =
-      "Synthetic browser demo";
-    document.querySelector(".workspace-label span").textContent = "DEMO";
-    document.querySelector(".key-hint").textContent = "PUBLIC PREVIEW";
+      t("Synthetic browser demo");
+    document.querySelector(".workspace-label span").textContent = t("DEMO");
+    document.querySelector(".key-hint").textContent = t("PUBLIC PREVIEW");
     document.querySelector(".sidebar-footer small").textContent =
-      "Synthetic samples · browser memory";
+      t("Synthetic samples · browser memory");
     document.querySelector(
       ".page-footer",
     ).firstElementChild.nextElementSibling.textContent =
-      "Demo events stay in your browser. Run real agents locally.";
+      t("Demo events stay in your browser. Run real agents locally.");
     $("pages-note").hidden = false;
-    $("go-live").textContent = "Follow demo ↗";
+    $("go-live").textContent = t("Follow demo ↗");
   }
+}
+window.addEventListener("relay:languagechange", () => {
+  applyModeCopy();
+  connection($("connection").dataset.copy || "Connecting", connected);
+  renderRuns();
+  setPage(page);
+});
+await act(async () => {
+  applyModeCopy();
   const config = await api("/api/config");
+  codexEnabled = config.enableCodex;
   if (config.enableCodex) {
     const option = $("demo-mode").querySelector('[value="codex"]');
     option.disabled = false;
-    option.textContent = "Codex CLI · real agents";
+    option.textContent = t("Codex CLI · real agents");
   }
   await refreshRuns();
   const remembered = localStorage.getItem("relay-run");
@@ -763,7 +799,7 @@ await act(async () => {
           : runs[0].id,
     );
   else {
-    $("empty").hidden = false;
+    $("empty").hidden = page === "dashboard";
     connection("Local server connected", true);
   }
 })();

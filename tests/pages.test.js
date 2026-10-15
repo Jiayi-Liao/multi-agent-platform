@@ -145,12 +145,15 @@ test("Pages builds at a repository subpath and publishes only explicit public as
       files.includes("theme.css") &&
       files.includes("experience.css") &&
       files.includes("history.js") &&
+      files.includes("i18n.js") &&
+      files.includes("dashboard-plan.md") &&
+      files.includes("dashboard-plan.zh-CN.md") &&
       files.includes("client.js") &&
       files.includes("vendor/three.core.js"),
   );
   assert.ok(
     !files.some((name) =>
-      /\.runtime|sqlite|\.env|\.git\/|dashboard|codex/.test(name),
+      /\.runtime|sqlite|\.env|\.git\/|dashboard\.(?:jpg|png)|codex/.test(name),
     ),
   );
   const samples = JSON.parse(

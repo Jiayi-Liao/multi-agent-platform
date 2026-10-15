@@ -37,23 +37,25 @@ export function project(events) {
           ...p,
           status: "queued",
           timestamp: event.timestamp,
+          eventSeq: event.seq,
           acknowledgements: [],
         };
         break;
       case "message.acknowledged": {
         const m = state.messages[p.messageId];
         m.status = p.state;
-        m.acknowledgements.push({ ...p, timestamp: event.timestamp });
+        m.acknowledgements.push({ ...p, timestamp: event.timestamp, eventSeq: event.seq });
         break;
       }
       case "artifact.created":
-        state.artifacts.push({ ...p, timestamp: event.timestamp });
+        state.artifacts.push({ ...p, timestamp: event.timestamp, eventSeq: event.seq });
         break;
       case "tool.started":
         state.tools.push({
           ...p,
           status: "running",
           timestamp: event.timestamp,
+          eventSeq: event.seq,
         });
         break;
       case "tool.completed": {
@@ -62,6 +64,7 @@ export function project(events) {
           Object.assign(tool, p, {
             status: p.error ? "failed" : "completed",
             finishedAt: event.timestamp,
+            eventSeq: event.seq,
           });
         break;
       }

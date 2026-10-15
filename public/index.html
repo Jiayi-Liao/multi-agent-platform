@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="./theme.css" />
     <link rel="stylesheet" href="./experience.css" />
+    <script src="./i18n.js"></script>
     <script src="./theme.js"></script>
   </head>
   <body data-page="overview">
@@ -22,6 +23,7 @@
         <a href="#overview" data-page-link="overview" aria-current="page"><span>◎</span> Overview <small>01</small></a>
         <a href="#replay" data-page-link="replay"><span>▷</span> Replay studio <small>02</small></a>
         <a href="#agents" data-page-link="agents"><span>♧</span> Agent crew <small>03</small></a>
+        <a href="#dashboard" data-page-link="dashboard"><span>▥</span> Dashboard <small>04</small></a>
       </nav>
       <button id="new-run" class="outline wide">＋ New run</button>
       <div class="section-label">
@@ -41,6 +43,7 @@
         </div>
         <div class="topbar-right">
           <a class="docs-link" href="./api.html">API & setup ↗</a>
+          <button type="button" class="language-toggle" data-language-toggle aria-label="Switch to Chinese">中文</button>
           <button
             type="button"
             class="theme-toggle"
@@ -75,6 +78,11 @@
             </option></select
           ><button id="start-demo" class="primary">↗ Launch demo</button>
         </div>
+      </section>
+      <section id="dashboard-page" class="dashboard-plan panel" hidden aria-label="Dashboard roadmap">
+        <div class="plan-intro"><span class="eyebrow">DESIGN BRIEF / PLANNED</span><span class="plan-mark" aria-hidden="true">▥</span><h2>A canvas for your experiments.</h2><p>Agents will publish structured metrics and dashboard definitions. Follow loss curves, compare experiments, and trace every point back to its source event.</p><span class="badge">PLANNING · NOT AVAILABLE YET</span></div>
+        <div class="plan-grid"><article><span>01 / COLLECT</span><h3>Agent-owned metrics</h3><p>Typed series, explicit steps, units, and experiment IDs. Start with loss and evaluation curves.</p></article><article><span>02 / COMPOSE</span><h3>Reusable dashboards</h3><p>Agents submit a validated JSON definition. Users choose a board, inspect charts, and follow live updates.</p></article><article><span>03 / REPLAY</span><h3>History with context</h3><p>Charts follow the replay cursor. Select a point to inspect the agent, event, and artifact behind it.</p></article></div>
+        <div class="plan-footer"><p>This is the design brief. Dashboard APIs and chart widgets are proposed; they are not implemented.</p><a class="outline" href="https://github.com/Jiayi-Liao/multi-agent-platform/blob/main/artifacts/dashboard-plan.md" target="_blank" rel="noopener">Read the implementation plan ↗</a></div>
       </section>
       <div id="empty" class="empty-welcome" hidden>
         <span class="empty-orbit">◎</span>
@@ -226,14 +234,14 @@
                 <span>RUN START</span><span id="cursor-label">EVENT 0 / 0</span
                 ><span id="duration-label">00:00</span>
               </div>
-              <div class="checkpoint-heading"><span>JUMP TO A CHAPTER</span><span>SPACE play / pause · ← → step</span></div>
+              <div class="checkpoint-heading"><span>JUMP TO A CHAPTER · NEWEST FIRST</span><span>SPACE play / pause · ← → step</span></div>
               <div id="checkpoints" class="checkpoints" aria-label="Replay checkpoints"></div>
             </section>
             <section class="panel timeline-panel">
               <div class="panel-head">
                 <div>
                   <span class="panel-index">03</span>
-                  <h3>Event journal</h3>
+                  <h3>Event journal</h3><span class="order-note">Newest first</span>
                   <span id="activity-count" class="count-pill">0</span>
                 </div>
                 <button id="clear-filter" class="quiet" hidden>

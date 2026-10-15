@@ -41,6 +41,9 @@ test("the local server delivers all Three.js modules under the self-only CSP", a
     "/theme.css",
     "/experience.css",
     "/history.js",
+    "/i18n.js",
+    "/dashboard-plan.md",
+    "/dashboard-plan.zh-CN.md",
     "/world-state.js",
     "/vendor/three.module.js",
     "/vendor/three.core.js",
@@ -49,7 +52,7 @@ test("the local server delivers all Three.js modules under the self-only CSP", a
     assert.equal(res.status, 200, path);
     assert.match(
       res.headers.get("content-type"),
-      path.endsWith(".css") ? /css/ : /javascript/,
+      path.endsWith(".css") ? /css/ : path.endsWith(".md") ? /markdown/ : /javascript/,
     );
     assert.match(
       res.headers.get("content-security-policy"),

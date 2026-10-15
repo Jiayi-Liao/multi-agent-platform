@@ -223,3 +223,8 @@
     padding: 7px 10px;
   }
 }
+
+/* Shared by the app and standalone API guide. */
+.language-toggle { border: 1px solid var(--line, #c6cbbb); border-radius: 6px; padding: 8px 10px; background: transparent; color: inherit; font: inherit; font-size: 10px; cursor: pointer; white-space: nowrap; }
+.language-toggle:hover { color: var(--lime); border-color: var(--lime); }
+.language-toggle:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }

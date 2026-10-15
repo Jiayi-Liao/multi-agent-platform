@@ -220,6 +220,9 @@ export function createApp({
           "/experience.css": ["public/experience.css", "text/css"],
           "/history.js": ["src/history.js", "text/javascript"],
           "/theme.js": ["public/theme.js", "text/javascript"],
+          "/i18n.js": ["public/i18n.js", "text/javascript"],
+          "/dashboard-plan.md": ["artifacts/dashboard-plan.md", "text/markdown; charset=utf-8"],
+          "/dashboard-plan.zh-CN.md": ["artifacts/dashboard-plan.zh-CN.md", "text/markdown; charset=utf-8"],
           "/state.js": ["src/state.js", "text/javascript"],
           "/favicon.svg": ["public/favicon.svg", "image/svg+xml"],
         };

@@ -13,10 +13,11 @@
     const theme = preference || (system.matches ? "dark" : "light");
     root.dataset.theme = theme;
     for (const button of document.querySelectorAll("[data-theme-toggle]")) {
-      button.textContent = theme === "light" ? "☀ Light" : "☾ Dark";
+      const chinese = window.RelayI18n?.locale() === "zh-CN";
+      button.textContent = theme === "light" ? (chinese ? "☀ 浅色" : "☀ Light") : (chinese ? "☾ 深色" : "☾ Dark");
       button.setAttribute(
         "aria-label",
-        `Switch to ${theme === "light" ? "dark" : "light"} theme`,
+        chinese ? `切换为${theme === "light" ? "深色" : "浅色"}主题` : `Switch to ${theme === "light" ? "dark" : "light"} theme`,
       );
       button.title = button.getAttribute("aria-label");
       button.setAttribute("aria-pressed", String(theme === "light"));
@@ -26,6 +27,7 @@
     );
   };
   apply();
+  window.addEventListener("relay:languagechange", apply);
   document.addEventListener(
     "DOMContentLoaded",
     () => {

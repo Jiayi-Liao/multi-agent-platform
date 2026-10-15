@@ -1,10 +1,12 @@
 # Relay · Multi-Agent Platform
 
+[简体中文](README.zh-CN.md)
+
 A local workspace for watching agents communicate and replaying their work. Roles are data: a run can contain writers, reviewers, researchers, planners, or any future role without changing the UI.
 
 ![Mission overview](artifacts/overview-redesign.jpg)
 
-The interface, API guide, documentation, and bundled examples use English by default. Agent messages and artifacts retain the content you submit.
+The interface, API guide, documentation, and bundled examples use English by default. Use **中文 / EN** in the header to switch the UI and API guide to Chinese; the choice persists across pages. Agent names, roles, messages and artifacts retain the content you submit.
 
 The dashboard and API guide support light and dark themes. Use the theme switch in the header; your preference is saved across pages and reloads. Before a preference is saved, the UI follows your system appearance.
 
@@ -40,11 +42,12 @@ The demo intentionally starts from a flawed announcement, then goes through **re
 
 ## What you can do
 
-Use the sidebar to move between **Overview**, **Replay studio**, and **Agent crew**. The URL hash preserves the selected view on reload and supports direct links on GitHub Pages (`#overview`, `#replay`, `#agents`).
+Use the sidebar to move between **Overview**, **Replay studio**, **Agent crew**, and **Dashboard** (planning). The URL hash preserves the selected view on reload and supports direct links on GitHub Pages (`#overview`, `#replay`, `#agents`, `#dashboard`).
 
 - **Overview:** a 3D mission outpost, compact run metrics, the latest output, and quick crew access.
 - **Replay studio:** a current-event card, transport controls, scrollable chapter checkpoints, and the complete event journal. Events ahead of the cursor are dimmed; selecting one restores that exact point. Space toggles playback and arrow keys step events outside text fields and controls with their own native keyboard behavior.
-- **Agent crew:** search arbitrary names or roles, inspect current activity and parent relationships, and switch between complete history, messages, artifacts, and tools. Opening a record jumps to it in replay. Every profile follows the selected replay point; agents and output that do not exist yet remain absent.
+- **Dashboard:** a planning brief for agent-created boards and experiment curves. The feature and its APIs are not implemented yet; see the [implementation plan](artifacts/dashboard-plan.md) ([中文](artifacts/dashboard-plan.zh-CN.md)).
+- **Agent crew:** search arbitrary names or roles, inspect current activity and parent relationships, and switch between complete history, messages, artifacts, and tools. Opening a record jumps to it in replay. Event journals, chapters, agent records, conversations, acknowledgements, tools and artifacts list newest events first. Artifact cards include a full local timestamp with timezone, elapsed time, and source event sequence. Every profile follows the selected replay point; agents and output that do not exist yet remain absent.
 
 
 - Explore a Three.js agent outpost: robots, workstations, glowing communication routes, and recorded send packets. Drag to orbit, scroll or use buttons to zoom, and reset the camera. Select a robot to inspect it; select a route to filter its messages. Arbitrary roles and parent relationships appear automatically.
@@ -110,6 +113,8 @@ await planner.finish();
 Poll `client.inbox()` from an external worker to receive outstanding messages; acknowledged terminal messages leave the inbox. Add your runtime's tools/artifacts with `client.record()`. This MVP does **not** automatically capture arbitrary existing Codex desktop chats or their native subagent messages.
 
 ## API
+
+UI ordering never mutates the persisted log: history APIs, exports, SSE and replay projection stay in ascending commit order; worker inboxes retain oldest-first processing.
 
 The HTTP API is available at **http://localhost:4310**. It is a local API, not an internet-hosted service. POST requests require `Content-Type: application/json` and at most 128,000 bytes. Run endpoints are run-scoped and use JSON. The [browser API guide](public/api.html) also covers the JavaScript client and SSE subscriptions. A run is the communication namespace. A conversation belongs to two participants inside that run.
 

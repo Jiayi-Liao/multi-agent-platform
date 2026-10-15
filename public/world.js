@@ -1,6 +1,7 @@
 import * as THREE from "/vendor/three.module.js";
 import { agentSlots, packetProgress } from "/world-state.js";
 
+const { t, locale } = window.RelayI18n;
 const colors = [
   "#d5f867",
   "#8dbbd2",
@@ -45,7 +46,7 @@ export class AgentWorld {
       });
     } catch {
       this.fallback(
-        "3D requires WebGL2. Explore agents and communication below.",
+        t("3D requires WebGL2. Explore agents and communication below."),
       );
       return;
     }
@@ -58,7 +59,7 @@ export class AgentWorld {
     this.canvas = this.renderer.domElement;
     this.canvas.setAttribute(
       "aria-label",
-      "3D agent outpost. Drag to orbit, scroll to zoom. Use agent buttons for keyboard selection.",
+      t("3D agent outpost. Drag to orbit, scroll to zoom. Use agent buttons for keyboard selection."),
     );
     this.canvas.setAttribute("role", "img");
     this.host.append(this.canvas, this.labels);
@@ -105,7 +106,7 @@ export class AgentWorld {
     this.contextLost = (e) => {
       e.preventDefault();
       this.fallback(
-        "3D paused because the graphics context was lost. Reload to restore it; history remains available.",
+        t("3D paused because the graphics context was lost. Reload to restore it; history remains available."),
       );
     };
     this.canvas.addEventListener("webglcontextlost", this.contextLost);
@@ -468,6 +469,7 @@ export class AgentWorld {
   }
   update(state, { clock, live, playing, selected, runId }) {
     this.state = state;
+    this.canvas?.setAttribute("aria-label", t("3D agent outpost. Drag to orbit, scroll to zoom. Use agent buttons for keyboard selection."));
     this.clock = clock;
     this.live = live;
     this.playing = playing;
@@ -480,9 +482,10 @@ export class AgentWorld {
     const agents = Object.values(state.agents),
       messages = Object.values(state.messages);
     this.hud.textContent = !agents.length
-      ? "OUTPOST EMPTY · advance the timeline"
-      : `${agents.filter((a) => a.status === "working").length} WORKING · ${messages.length} HANDOFFS`;
+      ? t("OUTPOST EMPTY \u00b7 advance the timeline")
+      : t("{0} WORKING · {1} HANDOFFS", agents.filter((a) => a.status === "working").length, messages.length);
     const rosterSignature = JSON.stringify([
+      locale(),
       agents.map((a) => [a.id, a.name, a.role, a.status]),
       messages.map((m) => [m.id, m.fromAgentId, m.toAgentId]),
       selected,
@@ -495,7 +498,7 @@ export class AgentWorld {
         b.className = `world-roster-agent ${selected === a.id ? "selected" : ""}`;
         b.dataset.agent = a.id;
         b.style.setProperty("--agent-color", colors[index % colors.length]);
-        b.textContent = `${a.name} · ${a.role} · ${a.status}`;
+        b.textContent = `${a.name} · ${a.role} · ${t(a.status)}`;
         b.setAttribute("aria-pressed", String(selected === a.id));
         this.roster.append(b);
       });
@@ -534,10 +537,10 @@ export class AgentWorld {
     for (const a of agents) {
       const node = this.nodes.get(a.id);
       node.label.classList.toggle("selected", selected === a.id);
-      node.label.title = `${a.name} · ${a.role} · ${a.status}${a.activity ? " · " + a.activity : ""}`;
+      node.label.title = `${a.name} · ${a.role} · ${t(a.status)}${a.activity ? " · " + a.activity : ""}`;
       node.label.setAttribute(
         "aria-label",
-        `${a.name}, ${a.role}, ${a.status}. Inspect agent`,
+        `${a.name}, ${a.role}, ${t(a.status)}. ${t("Inspect agent")}`,
       );
       node.glow.color.set(a.status === "failed" ? "#ee8c78" : node.tint);
       node.glow.emissive.copy(node.glow.color);
