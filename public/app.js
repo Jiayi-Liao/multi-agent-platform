@@ -81,14 +81,54 @@ const gallery = new ChartGallery({
   transport, esc, robot, time: artifactTime,
   onDemo: act(launchChartDemo), onLive: () => $("go-live").click(), onStop: () => $("cancel").click(),
 });
+// One set of replay controls and diagnostic views, moved between their page layouts.
+const replayLayout = (() => {
+  const details = $("event-details"), scene = $("replay-world-details");
+  const nodes = {
+    transport: $("replay-transport"), journal: document.querySelector(".timeline-panel"),
+    inspector: document.querySelector(".inspector"), world: document.querySelector(".graph-panel"),
+  };
+  const anchors = new Map(Object.values(nodes).map((node) => {
+    const anchor = document.createComment("shared view position");
+    node.before(anchor);
+    return [node, anchor];
+  }));
+  const move = (node, parent, before = null) => {
+    if (node.parentNode !== parent || (before && node.nextElementSibling !== before)) parent.insertBefore(node, before);
+  };
+  nodes.inspector.tabIndex = -1;
+  return {
+    apply(page) {
+      details.hidden = page !== "replay";
+      if (page === "replay") {
+        move(nodes.transport, $("workspace"), $("conversation-panel"));
+        move(nodes.journal, $("event-journal-slot"));
+        move(nodes.inspector, $("event-inspector-slot"));
+        move(nodes.world, $("replay-world-slot"));
+      } else {
+        for (const [node, anchor] of anchors) if (node.previousSibling !== anchor) anchor.after(node);
+      }
+    },
+    reset() { details.open = false; scene.open = false; },
+    reveal() { details.open = true; },
+    inspect() {
+      details.open = true;
+      nodes.inspector.focus({ preventScroll: true });
+      nodes.inspector.scrollIntoView({ block: "center" });
+    },
+    worldVisible() { return details.open && scene.open; },
+  };
+})();
+for (const id of ["event-details", "replay-world-details"])
+  $(id).addEventListener("toggle", () => { if (runId && page === "replay") render(); });
 const conversationLog = new ConversationLog({
-  esc, time: formatTimestamp, onLive: () => $("go-live").click(),
+  esc, time: formatTimestamp,
   onInspect(messageId) {
     const index = events.findIndex((event) => event.type === "message.sent" && event.payload.id === messageId);
     if (index < 0) return;
     selection = { eventId: events[index].id };
     seek(index);
-    $("inspector-content").scrollIntoView({ block: "center" });
+    replayLayout.inspect();
   },
 });
 async function refreshRuns() {
@@ -108,6 +148,7 @@ function renderRuns() {
 }
 async function selectRun(id) {
   $("rename-dialog").close();
+  replayLayout.reset();
   const token = ++generation;
   source?.close();
   source = null;
@@ -197,6 +238,8 @@ function render() {
   $("scrubber").value = cursor;
   $("cursor-label").textContent = t("EVENT {0} / {1}", cursor + 1, events.length);
   $("duration-label").textContent = duration(lastTime() - firstTime());
+  $("playback-position").textContent = duration((events[cursor]?.timestamp || firstTime()) - firstTime());
+  $("event-details-count").textContent = t("{0} events", events.length);
   $("play").textContent = playing ? "Ⅱ" : "▶";
   $("play").setAttribute(
     "aria-label",
@@ -212,7 +255,7 @@ function render() {
   $("add-agent").disabled = staticDemo || !live || run.status !== "running";
   $("crew-add").hidden = $("add-agent").disabled;
   $("context-state").textContent = live ? t(staticDemo ? "SYNTHETIC DEMO" : "FOLLOWING LIVE EVENTS") : t("HISTORY / EVENT {0}", cursor + 1);
-  if (page !== "agents" && page !== "dashboard") renderGraph();
+  if (page === "overview" || (page === "replay" && replayLayout.worldVisible())) renderGraph();
   renderMission();
   renderReplay();
   renderTimeline();
@@ -255,7 +298,8 @@ function setPage(next) {
   document.querySelector(".skip-link").href = page === "dashboard" ? "#dashboard-page" : "#workspace";
   document.querySelector(".heading-actions").hidden = page === "dashboard";
   $("empty").hidden = !!runId || page === "dashboard";
-  document.querySelector(".workspace-grid").hidden = page === "agents";
+  replayLayout.apply(page);
+  document.querySelector(".workspace-grid").hidden = page === "agents" || page === "replay";
   render();
 }
 window.addEventListener("hashchange", () => {
@@ -605,6 +649,7 @@ document.addEventListener(
       selection = { eventId: events[Number(seekButton.dataset.seek)]?.id };
       if (page !== "replay") { location.hash = "replay"; setPage("replay"); }
       seek(Number(seekButton.dataset.seek));
+      replayLayout.reveal();
       $("replay-moment").scrollIntoView({ block: "center" });
     }
     const eventButton = e.target.closest("[data-event]");
@@ -656,7 +701,7 @@ $("agent-search").addEventListener("input", renderAgents);
 $("search").addEventListener("input", renderTimeline);
 document.addEventListener("keydown", (e) => {
   if (document.querySelector("dialog[open]")) return;
-  if (page !== "replay" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.target.closest("input, textarea, select, [contenteditable]")) return;
+  if (page !== "replay" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.target.closest("input, textarea, select, summary, [contenteditable]")) return;
   if (e.code === "Space" && !e.target.closest("button")) { e.preventDefault(); $("play").click(); }
   if (e.key === "ArrowLeft") { e.preventDefault(); seek(cursor - 1); }
   if (e.key === "ArrowRight") { e.preventDefault(); seek(cursor + 1); }

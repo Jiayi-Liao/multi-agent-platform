@@ -4,10 +4,9 @@ const $ = (id) => document.getElementById(id);
 
 /** Read full protocol messages without mixing agent activity or future replay state. */
 export class ConversationLog {
-  constructor({ esc, time, onLive, onInspect }) {
+  constructor({ esc, time, onInspect }) {
     Object.assign(this, { esc, time, onInspect });
     this.reader = $("conversation-reader");
-    $("conversation-live").onclick = onLive;
     $("conversation-search").addEventListener("input", () => this.render());
     $("conversation-agent").addEventListener("change", () => this.render());
     $("conversation-panel").addEventListener("click", (event) => {
@@ -71,7 +70,6 @@ export class ConversationLog {
     const selected = threads.find((thread) => thread.id === this.threadId) || threads[0];
     this.threadId = selected?.id;
     $("conversation-count").textContent = `${t(threads.length === 1 ? "1 conversation" : "{0} conversations", threads.length)} · ${this.messageCount(threads.reduce((sum, thread) => sum + thread.messages.length, 0))}`;
-    $("conversation-live").hidden = this.live;
     $("conversation-context").textContent = (this.live ? t("Full messages · newest first") : t("At the replay cursor · future replies are hidden"))
       + (this.pair ? ` · ${t("Filtered route: {0} ↔ {1}", ...this.pair.map((id) => this.name(id)))}` : "");
     const list = $("conversation-threads"), listScroll = list.scrollTop;
@@ -80,7 +78,7 @@ export class ConversationLog {
     if (!selected) {
       this.readerThread = null;
       const filtered = query.trim() || select.value || this.pair;
-      this.reader.innerHTML = `<div class="conversation-empty"><span aria-hidden="true">↔</span><h4>${t(filtered ? "No conversations match." : "No messages at this point.")}</h4><p>${t(filtered ? "Choose another agent or clear your search." : "Move forward in replay or return to live to read later messages.")}</p><p>${t("Only messages submitted to Relay appear here.")}</p></div>`;
+      this.reader.innerHTML = `<div class="conversation-empty"><span aria-hidden="true">↔</span><h4>${t(filtered ? "No conversations match." : "No messages at this point.")}</h4><p>${t(filtered ? "Choose another agent or clear your search." : this.live ? "Messages appear here when agents send them." : "Move forward in replay or return to live to read later messages.")}</p><p>${t("Only messages submitted to Relay appear here.")}</p></div>`;
       return;
     }
     const changedThread = this.readerThread !== selected.id;

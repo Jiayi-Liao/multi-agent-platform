@@ -498,8 +498,14 @@
   "No reply required": "无需回复",
   "{0} messages": "{0} 条消息",
   "Message kind": "消息类型",
-  "Filtered route: {0} ↔ {1}": "已筛选路径：{0} ↔ {1}"
+  "Filtered route: {0} ↔ {1}": "已筛选路径：{0} ↔ {1}",
+  "Replay controls": "回放控制",
+  "Event details": "事件详情",
+  "Journal, checkpoints, and inspector": "事件流水、检查点与检查器",
+  "3D view at this moment": "查看此刻的 3D 场景",
+  "{0} events": "{0} 条事件"
 };
+  zh["Messages appear here when agents send them."] = "Agent 发送消息后，会显示在这里。";
   zh["1 message"] = "1 条消息";
   zh["1 conversation"] = "1 组对话";
   zh["{0} conversations"] = "{0} 组对话";

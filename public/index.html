@@ -128,11 +128,21 @@
           </div>
         </section>
         <section id="conversation-panel" class="panel conversation-panel" aria-labelledby="conversation-heading" hidden>
-          <div class="panel-head"><div><span class="panel-index">↔</span><h3 id="conversation-heading">Conversations</h3><span id="conversation-count" class="count-pill">0</span></div><button id="conversation-live" class="quiet" hidden>Return to live ↗</button></div>
+          <div class="panel-head"><div><span class="panel-index">↔</span><h3 id="conversation-heading">Conversations</h3><span id="conversation-count" class="count-pill">0</span></div></div>
           <div class="conversation-toolbar"><input id="conversation-search" type="search" aria-label="Search conversations" placeholder="Search full messages, agents, or IDs…" /><select id="conversation-agent" aria-label="Conversation participant"><option value="">All agents</option></select></div>
           <p id="conversation-context" class="conversation-context"></p>
           <div class="conversation-layout"><nav id="conversation-threads" class="conversation-threads" aria-label="Conversation threads"></nav><div id="conversation-reader" class="conversation-reader" aria-live="off"></div></div>
         </section>
+        <details id="event-details" class="panel event-details" hidden>
+          <summary><span><strong>Event details</strong><small>Journal, checkpoints, and inspector</small></span><span id="event-details-count" class="count-pill">0 events</span></summary>
+          <div class="event-details-body">
+            <div id="replay-moment" class="replay-moment"></div>
+            <div class="checkpoint-heading"><span>JUMP TO A CHAPTER · NEWEST FIRST</span><span>SPACE play / pause · ← → step</span></div>
+            <div id="checkpoints" class="checkpoints" aria-label="Replay checkpoints"></div>
+            <div class="event-details-grid"><div id="event-journal-slot"></div><div id="event-inspector-slot"></div></div>
+            <details id="replay-world-details" class="replay-world-details"><summary>3D view at this moment</summary><div id="replay-world-slot"></div></details>
+          </div>
+        </details>
         <div class="workspace-grid">
           <div class="left-column">
             <section class="panel graph-panel">
@@ -198,18 +208,8 @@
               <div id="mission-summary"></div>
               <div id="crew-strip" class="crew-strip"></div>
             </section>
-            <section class="panel replay-panel">
-              <div class="replay-head">
-                <div>
-                  <span class="panel-index">02</span>
-                  <h3>Replay transport</h3>
-                  <span id="replay-label" class="muted mono"
-                    >Following live events</span
-                  >
-                </div>
-                <button id="go-live" class="quiet">Return to live ↗</button>
-              </div>
-              <div id="replay-moment" class="replay-moment"></div>
+            <section id="replay-transport" class="panel replay-panel" aria-label="Replay controls">
+              <div class="replay-toolbar">
               <div class="replay-controls">
                 <button id="rewind" class="control" aria-label="Jump to start">
                   |◀</button
@@ -237,12 +237,9 @@
                   <option value="8">8×</option>
                 </select>
               </div>
-              <div class="replay-scale">
-                <span>RUN START</span><span id="cursor-label">EVENT 0 / 0</span
-                ><span id="duration-label">00:00</span>
+                <div class="replay-readout"><span id="cursor-label" class="mono">EVENT 0 / 0</span><span class="playback-time"><span id="playback-position">00:00</span> / <span id="duration-label">00:00</span></span><button id="go-live" class="quiet">Return to live ↗</button></div>
               </div>
-              <div class="checkpoint-heading"><span>JUMP TO A CHAPTER · NEWEST FIRST</span><span>SPACE play / pause · ← → step</span></div>
-              <div id="checkpoints" class="checkpoints" aria-label="Replay checkpoints"></div>
+              <span id="replay-label" class="replay-status muted mono">Following live events</span>
             </section>
             <section class="panel timeline-panel">
               <div class="panel-head">
