@@ -227,6 +227,7 @@ export function createApp({
       if (req.method === "GET") {
         const files = {
           "/": ["public/index.html", "text/html"],
+          "/conversations.js": ["public/conversations.js", "text/javascript"],
           "/gallery.js": ["public/gallery.js", "text/javascript"],
           "/app.js": ["public/app.js", "text/javascript"],
           "/transport.js": ["public/transport.js", "text/javascript"],

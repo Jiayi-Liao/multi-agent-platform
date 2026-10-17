@@ -119,6 +119,7 @@ export async function buildPages(destination = join(root, "dist")) {
   const files = {
     "index.html": "public/index.html",
     "app.js": "public/app.js",
+    "conversations.js": "public/conversations.js",
     "gallery.js": "public/gallery.js",
     "world.js": "public/world.js",
     "transport.js": "public/transport.js",

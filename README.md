@@ -182,6 +182,12 @@ Select an agent in Overview, Agent crew, or Dashboard and choose **Rename**. Nam
 
 JavaScript workers can call `await client.rename("Research lead")`. This changes the client's own agent name; use the HTTP endpoint to rename any agent in a run.
 
+### Reading conversations
+
+Replay opens with a conversation reader. Select an agent or a thread to read complete messages in both directions, newest first. Search covers full message bodies, participant names, and IDs, while keeping matched threads intact. Reply links jump to the original message. Each message includes its recorded time, kind, delivery state, and expandable correlation/delivery details. **Inspect event** moves the replay cursor to that send; **Return to live** restores the latest state. Rewinding hides future replies and acknowledgements.
+
+The reader displays only what adapters submit through the message API. Status-only events and short summaries cannot reconstruct an unrecorded conversation. Send the full task, feedback, and result text with `client.send()` / `client.reply()` to retain it.
+
 ## Architecture
 
 ```text

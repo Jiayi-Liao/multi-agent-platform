@@ -1,6 +1,7 @@
 import { project, terminalMessages } from "/state.js";
 import { agentRecord, checkpoints, newestFirst, replayClock } from "/history.js";
 import { ChartGallery } from "/gallery.js";
+import { ConversationLog } from "/conversations.js";
 import { AgentWorld } from "/world.js";
 import { createTransport } from "/transport.js";
 const { t, locale, formatTimestamp } = window.RelayI18n;
@@ -79,6 +80,16 @@ function connection(text, ok = false) {
 const gallery = new ChartGallery({
   transport, esc, robot, time: artifactTime,
   onDemo: act(launchChartDemo), onLive: () => $("go-live").click(), onStop: () => $("cancel").click(),
+});
+const conversationLog = new ConversationLog({
+  esc, time: formatTimestamp, onLive: () => $("go-live").click(),
+  onInspect(messageId) {
+    const index = events.findIndex((event) => event.type === "message.sent" && event.payload.id === messageId);
+    if (index < 0) return;
+    selection = { eventId: events[index].id };
+    seek(index);
+    $("inspector-content").scrollIntoView({ block: "center" });
+  },
 });
 async function refreshRuns() {
   runs = await api("/api/runs");
@@ -207,6 +218,12 @@ function render() {
   renderTimeline();
   renderInspector();
   if (page === "agents") renderAgents();
+  if (page === "replay") {
+    const selectedEvent = visibleEvents().find((event) => event.id === selection?.eventId);
+    const selectedMessage = selectedEvent?.type === "message.sent" ? selectedEvent.payload.id
+      : selectedEvent?.type === "message.acknowledged" ? selectedEvent.payload.messageId : null;
+    conversationLog.update(state, runId, { live, pair: edgeFilter ? [edgeFilter.from, edgeFilter.to] : null, selectedMessage });
+  }
 }
 let page = ["overview", "replay", "agents", "dashboard"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
 let profileTab = "history";
@@ -233,6 +250,7 @@ function setPage(next) {
     else link.removeAttribute("aria-current");
   });
   $("agent-page").hidden = page !== "agents";
+  $("conversation-panel").hidden = page !== "replay";
   $("dashboard-page").hidden = page !== "dashboard";
   document.querySelector(".skip-link").href = page === "dashboard" ? "#dashboard-page" : "#workspace";
   document.querySelector(".heading-actions").hidden = page === "dashboard";
@@ -261,7 +279,8 @@ function pickWorld(item) {
     edgeFilter = { from: item.from, to: item.to };
     agentFilter = null;
     if (page !== "replay") { location.hash = "replay"; setPage("replay"); }
-    renderTimeline();
+    render();
+    $("conversation-panel").scrollIntoView({ block: "start" });
   }
 }
 function renderGraph() {
@@ -501,7 +520,7 @@ function renderInspector() {
       live &&
       state.run.status === "running" &&
       !terminalMessages.has(m.status);
-    el.innerHTML = `<div class="eyebrow">${t("COMMUNICATION")}</div><h4>${esc(name(m.fromAgentId))} → ${esc(name(m.toAgentId))}</h4><span class="detail-tag">${esc(m.kind)} · ${esc(t(m.status))}</span><div class="detail-label">${t("Message")}</div><div class="detail-body">${esc(m.content)}</div><div class="detail-label">${t("Correlation")}</div><div class="detail-meta">${t("Message:")} ${esc(m.id)}<br>${t("Conversation:")} ${esc(m.conversationId)}<br>${t("Reply to:")} ${esc(m.replyTo || t("Conversation start"))}</div><div class="detail-label">${t("Delivery history")}</div>${newestFirst([{ state: "queued", timestamp: m.timestamp, eventSeq: m.eventSeq }, ...m.acknowledgements]).map((a) => `<div class="ack-row"><span>${esc(t(a.state))}</span><span>${duration(a.timestamp - firstTime())}</span></div>`).join("")}${canAck ? `<div class="detail-label">${t("Recipient actions")}</div>${m.status === "queued" ? `<button class="quiet" data-ack="delivered" data-message="${esc(m.id)}">${t("Mark delivered")}</button>` : ""}${m.status === "delivered" ? `<button class="quiet" data-ack="processing" data-message="${esc(m.id)}">${t("Mark processing")}</button>` : ""}${!m.expectsResponse && m.status !== "queued" ? `<button class="quiet" data-ack="answered" data-message="${esc(m.id)}">${t("Mark handled")}</button>` : ""}<button class="quiet danger" data-ack="failed" data-message="${esc(m.id)}">${t("Mark failed")}</button>` : ""}<div class="detail-label">${t("Conversation · {0} messages", thread.length)}</div>${thread.map((x) => `<button class="conversation-button" data-message-event="${esc(x.id)}"><strong>${esc(name(x.fromAgentId))} → ${esc(name(x.toAgentId))}</strong><br>${esc(x.content.slice(0, 200))}</button>`).join("")}${m.status !== "failed" ? compose(m.toAgentId, m) : ""}`;
+    el.innerHTML = `<div class="eyebrow">${t("COMMUNICATION")}</div><h4>${esc(name(m.fromAgentId))} → ${esc(name(m.toAgentId))}</h4><span class="detail-tag">${esc(m.kind)} · ${esc(t(m.status))}</span><div class="detail-label">${t("Message")}</div><div class="detail-body">${esc(m.content)}</div><button class="profile-link" data-open-conversation="${esc(m.id)}">${t("Read full conversation ↗")}</button><div class="detail-label">${t("Correlation")}</div><div class="detail-meta">${t("Message:")} ${esc(m.id)}<br>${t("Conversation:")} ${esc(m.conversationId)}<br>${t("Reply to:")} ${esc(m.replyTo || t("Conversation start"))}</div><div class="detail-label">${t("Delivery history")}</div>${newestFirst([{ state: "queued", timestamp: m.timestamp, eventSeq: m.eventSeq }, ...m.acknowledgements]).map((a) => `<div class="ack-row"><span>${esc(t(a.state))}</span><span>${duration(a.timestamp - firstTime())}</span></div>`).join("")}${canAck ? `<div class="detail-label">${t("Recipient actions")}</div>${m.status === "queued" ? `<button class="quiet" data-ack="delivered" data-message="${esc(m.id)}">${t("Mark delivered")}</button>` : ""}${m.status === "delivered" ? `<button class="quiet" data-ack="processing" data-message="${esc(m.id)}">${t("Mark processing")}</button>` : ""}${!m.expectsResponse && m.status !== "queued" ? `<button class="quiet" data-ack="answered" data-message="${esc(m.id)}">${t("Mark handled")}</button>` : ""}<button class="quiet danger" data-ack="failed" data-message="${esc(m.id)}">${t("Mark failed")}</button>` : ""}<div class="detail-label">${t("Conversation · {0} messages", thread.length)}</div>${thread.map((x) => `<button class="conversation-button" data-message-event="${esc(x.id)}"><strong>${esc(name(x.fromAgentId))} → ${esc(name(x.toAgentId))}</strong><br>${esc(x.content)}</button>`).join("")}${m.status !== "failed" ? compose(m.toAgentId, m) : ""}`;
     return;
   }
   const info = eventInfo(event);
@@ -541,7 +560,8 @@ $("graph").addEventListener("click", (e) => {
     edgeFilter = { from: edge.dataset.edgeFrom, to: edge.dataset.edgeTo };
     agentFilter = null;
     if (page !== "replay") { location.hash = "replay"; setPage("replay"); }
-    renderTimeline();
+    render();
+    $("conversation-panel").scrollIntoView({ block: "start" });
   }
 });
 document.addEventListener(
@@ -592,6 +612,14 @@ document.addEventListener(
       selection = { eventId: eventButton.dataset.event };
       render();
     }
+    const openConversation = e.target.closest("[data-open-conversation]");
+    if (openConversation) {
+      if (page !== "replay") { location.hash = "replay"; setPage("replay"); }
+      edgeFilter = null;
+      render();
+      conversationLog.open(openConversation.dataset.openConversation);
+      $("conversation-panel").scrollIntoView({ block: "start" });
+    }
     const messageButton = e.target.closest("[data-message-event]");
     if (messageButton) {
       selection = {
@@ -610,7 +638,7 @@ document.addEventListener(
           ? null
           : filter.dataset.filterAgent;
       edgeFilter = null;
-      renderTimeline();
+      render();
     }
     const ack = e.target.closest("[data-ack]");
     if (ack)
@@ -637,7 +665,7 @@ $("event-kind").addEventListener("change", renderTimeline);
 $("clear-filter").onclick = () => {
   agentFilter = null;
   edgeFilter = null;
-  renderTimeline();
+  render();
 };
 $("scrubber").oninput = (e) => seek(Number(e.target.value));
 $("rewind").onclick = () => seek(0);

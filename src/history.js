@@ -51,3 +51,32 @@ export function replayClock(events, cursor, time) {
     return Math.max(time, events[Math.max(end + 1, cursor + 1)]?.timestamp ?? time);
   return time;
 }
+
+/** Full, cursor-limited conversations. Both directions belong to the same thread. */
+export function conversationThreads(state, { agentId = null, pair = null, query = "" } = {}) {
+  const groups = new Map();
+  for (const message of Object.values(state.messages)) {
+    let thread = groups.get(message.conversationId);
+    if (!thread) {
+      thread = { id: message.conversationId, participantIds: [], messages: [], eventSeq: 0, timestamp: message.timestamp };
+      groups.set(thread.id, thread);
+    }
+    thread.messages.push(message);
+    for (const id of [message.fromAgentId, message.toAgentId])
+      if (!thread.participantIds.includes(id)) thread.participantIds.push(id);
+    for (const event of [message, ...message.acknowledgements]) {
+      if (event.eventSeq >= thread.eventSeq) {
+        thread.eventSeq = event.eventSeq;
+        thread.timestamp = event.timestamp;
+      }
+    }
+  }
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return newestFirst([...groups.values()].filter((thread) => {
+    if (agentId && !thread.participantIds.includes(agentId)) return false;
+    if (pair && !pair.every((id) => thread.participantIds.includes(id))) return false;
+    const text = [thread.id, ...thread.participantIds.flatMap((id) => [id, state.agents[id]?.name, state.agents[id]?.role]),
+      ...thread.messages.flatMap((m) => [m.id, m.replyTo, m.kind, m.content])].join(" ").toLowerCase();
+    return words.every((word) => text.includes(word));
+  })).map((thread) => ({ ...thread, messages: newestFirst(thread.messages) }));
+}

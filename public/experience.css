@@ -369,3 +369,50 @@ body[data-page="dashboard"] .page-heading h1 { font-size: 40px; }
   .chart-collection-heading { flex-wrap: wrap; gap: 12px; }
   .profile-actions button { font-size: 11px; }
 }
+
+/* Replay is a reading surface: full exchanges take precedence over activity summaries. */
+.conversation-panel { margin-bottom: 24px; overflow: hidden; scroll-margin-top: 20px; }
+.conversation-toolbar { display: flex; gap: 12px; padding: 0 22px; }
+.conversation-toolbar input { flex: 1; min-width: 0; font-size: 12px; }
+.conversation-toolbar select { max-width: 240px; font-size: 12px; }
+.conversation-context { padding: 13px 22px 17px; font: 10px/1.7 var(--mono); color: var(--muted); }
+.conversation-layout { display: grid; grid-template-columns: 245px minmax(0,1fr); border-top: 1px solid var(--line); }
+.conversation-threads { max-height: 660px; overflow: auto; border-right: 1px solid var(--line); background: var(--accent-wash); }
+.conversation-thread { width: 100%; text-align: left; display: block; padding: 20px 18px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.conversation-thread.selected { border-left-color: var(--lime); background: var(--panel); }
+.conversation-thread:hover { background: var(--panel); }
+.conversation-thread strong { display: block; font-size: 12px; font-weight: 600; line-height: 1.7; overflow-wrap: anywhere; }
+.conversation-thread > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 11px; line-height: 1.8; margin-top: 8px; color: var(--muted); }
+.conversation-thread small { display: block; margin-top: 14px; font: 9px/1.8 var(--mono); overflow-wrap: anywhere; color: var(--muted); }
+.conversation-reader { min-width: 0; max-height: 660px; min-height: 260px; overflow: auto; padding: 22px; scroll-padding-block: 20px; }
+.conversation-reader-heading { display: flex; justify-content: space-between; gap: 15px; align-items: baseline; margin-bottom: 20px; }
+.conversation-reader-heading h4 { margin: 0; font: 25px/1.3 var(--display); overflow-wrap: anywhere; }
+.conversation-reader-heading > span { font: 10px var(--mono); color: var(--muted); white-space: nowrap; }
+.conversation-message { border: 1px solid var(--line); border-left: 3px solid var(--lime); border-radius: 7px; padding: 20px; margin-bottom: 18px; scroll-margin-block: 20px; }
+.conversation-message.focused-message { background: var(--accent-wash); }
+.conversation-message-heading { display: flex; gap: 12px; justify-content: space-between; align-items: start; flex-wrap: wrap; }
+.conversation-message-heading strong { font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.conversation-message-heading strong span { color: var(--muted); margin-inline: 5px; }
+.conversation-message-heading .detail-tag { font-size: 9px; padding: 4px 7px; }
+.conversation-message-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 15px; margin-block: 9px 18px; font: 10px/1.8 var(--mono); color: var(--muted); }
+.conversation-body { font-size: 13px; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.conversation-reply { font-size: 11px; line-height: 1.7; text-align: left; margin-bottom: 13px; padding: 8px 11px; border-left: 2px solid var(--blue); color: var(--blue); background: var(--accent-wash); overflow-wrap: anywhere; }
+.conversation-message footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.conversation-message footer > span { font: 9px var(--mono); color: var(--muted); }
+.conversation-message footer button { padding-left: 0; font-size: 11px; color: var(--lime); }
+.conversation-details { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line); font-size: 11px; }
+.conversation-details summary { cursor: pointer; color: var(--muted); }
+.conversation-details dl { display: grid; grid-template-columns: 95px minmax(0,1fr); gap: 7px; margin-top: 17px; font: 10px/1.7 var(--mono); }
+.conversation-details dt { color: var(--muted); }.conversation-details dd { margin: 0; overflow-wrap: anywhere; }
+.conversation-delivery { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); font: 9px/1.7 var(--mono); }
+.conversation-empty { padding: 25px 10px; }.conversation-empty > span { font: 45px var(--display); color: var(--lime); }.conversation-empty h4 { font: 24px var(--display); margin: 20px 0 12px; }.conversation-empty p { font-size: 12px; line-height: 1.9; color: var(--muted); }
+body[data-page="replay"] .event-main p { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 1.8; }
+body[data-page="replay"] .moment-story p { white-space: pre-wrap; -webkit-line-clamp: 4; font-size: 12px; }
+.conversation-button { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 1000px) {
+  .conversation-layout { grid-template-columns: 195px minmax(0,1fr); }.conversation-reader { padding: 16px; }.conversation-message { padding: 15px; }.conversation-reader-heading h4 { font-size: 22px; }
+}
+@media (max-width: 700px) {
+  .conversation-layout { grid-template-columns: minmax(0,1fr); }.conversation-threads { display: flex; border-right: 0; border-bottom: 1px solid var(--line); max-height: 145px; }.conversation-thread { flex: 0 0 210px; border-bottom: 0; padding: 14px; }.conversation-thread > span { -webkit-line-clamp: 1; }.conversation-thread small { margin-top: 8px; }.conversation-reader { max-height: 70dvh; }.conversation-toolbar { padding-inline: 15px; flex-wrap: wrap; }.conversation-toolbar input { flex-basis: 100%; }.conversation-toolbar select { width: 100%; max-width: none; }.conversation-context { padding-inline: 15px; }.conversation-body { font-size: 12px; }.conversation-reader-heading { align-items: flex-start; }.conversation-message-meta { font-size: 9px; }.conversation-details dl { grid-template-columns: 1fr; }.conversation-details dd { margin-bottom: 8px; }
+}
+.conversation-toolbar input::placeholder { color: var(--muted); opacity: 1; }

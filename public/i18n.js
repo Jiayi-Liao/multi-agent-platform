@@ -473,8 +473,37 @@
   "values when retrying. Identical messages are idempotent; conflicting content returns 409. A conversation belongs to two participants within a single run. Resolve all outstanding replies and running tools before completing a run successfully. Finished execution is read-only; agent display names can still be changed through the rename endpoint.": "。相同消息可幂等重试，内容冲突返回 409。一个对话仅属于同一次运行中的两位参与者。成功完成运行前，必须处理所有待回复消息和运行中的工具。已结束任务的执行记录为只读，仍可通过改名接口修改 Agent 显示名字。",
   ". Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.": "。名字会去掉首尾空白，不能为空，最多 100 个字符。ID 和路由保持不变。",
   "Browser demo ready": "浏览器演示已就绪",
-  "The source repository is public, so anyone can clone it and start the local server. The demo site starts with an empty history. Launch a demo to generate a run; reloading clears browser demo history. Existing local runs remain saved across server restarts.": "源码仓库已公开，任何人都可以克隆并启动本地服务。演示站默认历史为空，点击演示后才会生成运行记录，刷新页面会清空浏览器演示历史。本地已有任务在服务重启后仍会保留。"
+  "The source repository is public, so anyone can clone it and start the local server. The demo site starts with an empty history. Launch a demo to generate a run; reloading clears browser demo history. Existing local runs remain saved across server restarts.": "源码仓库已公开，任何人都可以克隆并启动本地服务。演示站默认历史为空，点击演示后才会生成运行记录，刷新页面会清空浏览器演示历史。本地已有任务在服务重启后仍会保留。",
+  "Conversations": "对话",
+  "Search conversations": "搜索对话",
+  "Search full messages, agents, or IDs…": "搜索完整消息、Agent 或 ID…",
+  "Conversation participant": "对话参与者",
+  "All agents": "全部 Agent",
+  "Conversation threads": "对话列表",
+  "Read full conversation ↗": "阅读完整对话 ↗",
+  "Full messages · newest first": "完整消息 · 最新在前",
+  "At the replay cursor · future replies are hidden": "回放时刻的消息 · 未来回复暂不显示",
+  "{0} conversations · {1} messages": "{0} 组对话 · {1} 条消息",
+  "No conversations match.": "没有匹配的对话。",
+  "No messages at this point.": "此刻还没有消息。",
+  "Move forward in replay or return to live to read later messages.": "向前回放或返回最新状态，查看后续消息。",
+  "Choose another agent or clear your search.": "请切换 Agent 或清空搜索条件。",
+  "No conversation selected.": "尚未选择对话。",
+  "Select a thread to read its full messages.": "选择一组对话，阅读完整消息。",
+  "Reply to {0} · #{1}": "回复 {0} · #{1}",
+  "Original message is unavailable at this point.": "此刻无法查看原消息。",
+  "Message details": "消息详情",
+  "Inspect event ↗": "查看对应事件 ↗",
+  "Expects a reply": "需要回复",
+  "No reply required": "无需回复",
+  "{0} messages": "{0} 条消息",
+  "Message kind": "消息类型",
+  "Filtered route: {0} ↔ {1}": "已筛选路径：{0} ↔ {1}"
 };
+  zh["1 message"] = "1 条消息";
+  zh["1 conversation"] = "1 组对话";
+  zh["{0} conversations"] = "{0} 组对话";
+  zh["Only messages submitted to Relay appear here."] = "这里仅显示已提交给 Relay 的消息。";
   zh["JUMP TO A CHAPTER · NEWEST FIRST"] = "跳转到章节 · 最新在前";
   const key = "relay-language";
   let language = "en";

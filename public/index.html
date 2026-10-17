@@ -127,6 +127,12 @@
             ><small id="stat-events">0 recorded events</small>
           </div>
         </section>
+        <section id="conversation-panel" class="panel conversation-panel" aria-labelledby="conversation-heading" hidden>
+          <div class="panel-head"><div><span class="panel-index">↔</span><h3 id="conversation-heading">Conversations</h3><span id="conversation-count" class="count-pill">0</span></div><button id="conversation-live" class="quiet" hidden>Return to live ↗</button></div>
+          <div class="conversation-toolbar"><input id="conversation-search" type="search" aria-label="Search conversations" placeholder="Search full messages, agents, or IDs…" /><select id="conversation-agent" aria-label="Conversation participant"><option value="">All agents</option></select></div>
+          <p id="conversation-context" class="conversation-context"></p>
+          <div class="conversation-layout"><nav id="conversation-threads" class="conversation-threads" aria-label="Conversation threads"></nav><div id="conversation-reader" class="conversation-reader" aria-live="off"></div></div>
+        </section>
         <div class="workspace-grid">
           <div class="left-column">
             <section class="panel graph-panel">

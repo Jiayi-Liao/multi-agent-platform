@@ -134,7 +134,7 @@ test("Pages builds at a repository subpath and publishes only explicit public as
   const html = await readFile(join(destination, "index.html"), "utf8");
   assert.match(html, /data-mode="demo"/);
   assert.ok(!/(?:src|href)="\/(?!\/)/.test(html));
-  for (const name of ["app.js", "world.js", "transport.js", "gallery.js"]) {
+  for (const name of ["app.js", "world.js", "transport.js", "gallery.js", "conversations.js"]) {
     const code = await readFile(join(destination, name), "utf8");
     assert.ok(!/from\s+["']\/(?!\/)/.test(code), name);
   }
@@ -145,6 +145,7 @@ test("Pages builds at a repository subpath and publishes only explicit public as
       files.includes("theme.css") &&
       files.includes("experience.css") &&
       files.includes("gallery.js") &&
+      files.includes("conversations.js") &&
       files.includes("demo-charts/training-loss-final.html") &&
       files.includes("demo-charts/evaluation-comparison.html") &&
       files.includes("history.js") &&
