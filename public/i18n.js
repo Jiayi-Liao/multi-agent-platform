@@ -471,7 +471,9 @@
   "Finished execution is read-only; agent display names can still be changed through the rename endpoint.": "已结束任务的执行记录为只读；仍可通过改名接口修改 Agent 显示名字。",
   "Choose Rename in Overview, Agent crew, or Dashboard. Renames append agent.renamed events with agentId, previousName, and name. Replay shows the name at that point; finished runs keep their terminal status and execution duration. Local changes persist in SQLite. Public demo changes reset on reload.": "在总览、Agent 团队或看板中点击改名。改名会追加 agent.renamed 事件，包含 agentId、previousName 和 name。回放显示当时使用的名字；已结束任务的最终状态和执行时长保持不变。本地改名保存在 SQLite 中，公开演示的改名在刷新后重置。",
   "values when retrying. Identical messages are idempotent; conflicting content returns 409. A conversation belongs to two participants within a single run. Resolve all outstanding replies and running tools before completing a run successfully. Finished execution is read-only; agent display names can still be changed through the rename endpoint.": "。相同消息可幂等重试，内容冲突返回 409。一个对话仅属于同一次运行中的两位参与者。成功完成运行前，必须处理所有待回复消息和运行中的工具。已结束任务的执行记录为只读，仍可通过改名接口修改 Agent 显示名字。",
-  ". Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.": "。名字会去掉首尾空白，不能为空，最多 100 个字符。ID 和路由保持不变。"
+  ". Names are trimmed, required, and limited to 100 characters. IDs and routing stay unchanged.": "。名字会去掉首尾空白，不能为空，最多 100 个字符。ID 和路由保持不变。",
+  "Browser demo ready": "浏览器演示已就绪",
+  "The source repository is public, so anyone can clone it and start the local server. The demo site starts with an empty history. Launch a demo to generate a run; reloading clears browser demo history. Existing local runs remain saved across server restarts.": "源码仓库已公开，任何人都可以克隆并启动本地服务。演示站默认历史为空，点击演示后才会生成运行记录，刷新页面会清空浏览器演示历史。本地已有任务在服务重启后仍会保留。"
 };
   zh["JUMP TO A CHAPTER · NEWEST FIRST"] = "跳转到章节 · 最新在前";
   const key = "relay-language";

@@ -145,13 +145,15 @@ test("browser demo renames stream with unique ordered sequences during playback 
   assert.ok(result.events.every((e, index) => e.seq === index + 1));
   assert.ok(result.events.every((e, index) => !index || e.timestamp >= result.events[index - 1].timestamp));
   assert.equal(new Set(received.map((e) => e.seq)).size, received.length);
-  await rename("sample-charts", "Different");
+  await rename(run.id, "Different");
   const another = await demo.request("/api/demo/charts", {});
   assert.equal(project((await demo.request(`/api/runs/${another.id}`)).events).agents.trainer.name, "Trainer");
   for (const name of [null, " ", "x".repeat(101)]) await assert.rejects(rename(run.id, name), /name must/);
   await assert.rejects(rename(run.id, "X", "__proto__"), /not found/);
-  const reloaded = new StaticDemo(samples, project);
-  assert.equal(project((await reloaded.request("/api/runs/sample-charts")).events).agents.trainer.name, "Trainer");
+  const reloaded = new StaticDemo(samples, project, { schedule: () => 0, cancel: () => {} });
+  assert.deepEqual(await reloaded.request("/api/runs"), []);
+  const fresh = await reloaded.request("/api/demo/charts", {});
+  assert.equal(project((await reloaded.request(`/api/runs/${fresh.id}`)).events).agents.trainer.name, "Trainer");
   reloaded.close(); demo.close();
 });
 

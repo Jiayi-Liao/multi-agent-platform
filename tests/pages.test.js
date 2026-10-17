@@ -167,14 +167,12 @@ test("Pages builds at a repository subpath and publishes only explicit public as
 });
 
 test("a failed stream scheduler leaves no dangling listener that breaks cleanup", async () => {
-  const demo = new StaticDemo(await syntheticSamples(), project, {
-    schedule: () => {
-      throw new Error("Timer unavailable");
-    },
-  });
-  assert.throws(() => demo.subscribe("sample-rewrite"), /Timer unavailable/);
+  const demo = new StaticDemo(await syntheticSamples(), project, { schedule: () => 0, cancel: () => {} });
+  const run = await demo.request("/api/demo", {});
+  demo.schedule = () => { throw new Error("Timer unavailable"); };
+  assert.throws(() => demo.subscribe(run.id), /Timer unavailable/);
   assert.doesNotThrow(() => demo.close());
-  assert.equal(demo.listeners.get("sample-rewrite").size, 0);
+  assert.equal(demo.listeners.get(run.id).size, 0);
 });
 
 test("Pages chart demo streams two agents' HTML without introducing local file URLs", async () => {
@@ -197,4 +195,28 @@ test("Pages chart demo streams two agents' HTML without introducing local file U
   assert.equal(received.filter((e) => e.payload.html).length, 3);
   assert.equal(project(first.events).artifacts.length, 0);
   demo.close();
+});
+
+
+test("first use and reload start with empty history; only explicitly launched demos become runs", async () => {
+  const samples = await syntheticSamples(), clock = timers();
+  const demo = new StaticDemo(samples, project, clock);
+  assert.deepEqual(await demo.request("/api/runs"), []);
+  assert.equal(clock.count, 0);
+  for (const sample of samples) {
+    await assert.rejects(demo.request(`/api/runs/${sample.run.id}`), /not found/);
+    await assert.rejects(demo.request(`/api/runs/${sample.run.id}/export`), /not found/);
+  }
+  const first = await demo.request("/api/demo", {});
+  assert.deepEqual((await demo.request("/api/runs")).map((r) => r.id), [first.id]);
+  assert.equal(first.status, "running");
+  clock.advance(20000);
+  assert.equal((await demo.request("/api/runs"))[0].status, "completed");
+  const second = await demo.request("/api/demo/charts", {});
+  assert.deepEqual((await demo.request("/api/runs")).map((r) => r.id), [second.id, first.id]);
+  const reloaded = new StaticDemo(samples, project, timers());
+  assert.deepEqual(await reloaded.request("/api/runs"), []);
+  await assert.rejects(reloaded.request(`/api/runs/${first.id}`), /not found/);
+  reloaded.close(); demo.close();
+  assert.equal(clock.count, 0);
 });

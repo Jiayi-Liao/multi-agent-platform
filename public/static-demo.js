@@ -13,13 +13,11 @@ export class StaticDemo {
     this.schedule = schedule;
     this.cancel = cancel;
     this.now = now;
-    this.runs = new Map(
-      samples.map((sample) => [
-        sample.events[0].runId,
-        structuredClone(sample.events),
-      ]),
-    );
-    this.templates = new Map([...this.runs].map(([id, events]) => [id, structuredClone(events)]));
+    // Templates are available on demand; they are never preloaded as user history.
+    this.templates = new Map(samples.map((sample) => [
+      sample.events[0].runId, structuredClone(sample.events),
+    ]));
+    this.runs = new Map();
     this.listeners = new Map();
     this.jobs = new Map();
     this.serial = 0;

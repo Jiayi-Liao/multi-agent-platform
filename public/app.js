@@ -859,12 +859,11 @@ await act(async () => {
     await selectRun(
       runs.some((r) => r.id === remembered)
         ? remembered
-        : staticDemo
-          ? page === "dashboard" ? "sample-charts" : "sample-rewrite"
-          : runs[0].id,
+        : runs[0].id,
     );
   else {
     $("empty").hidden = page === "dashboard";
-    connection("Local server connected", true);
+    localStorage.removeItem("relay-run");
+    connection(staticDemo ? "Browser demo ready" : "Local server connected", true);
   }
 })();

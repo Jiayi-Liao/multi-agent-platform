@@ -16,7 +16,7 @@ The dashboard and API guide support light and dark themes. Use the theme switch 
 
 The source repository is public. Clone it to run the local backend, connect your agents, or extend the visualization. The Pages site provides synthetic examples and the client module.
 
-The project includes a static GitHub Pages build: an interactive Three.js demo with three synthetic sample workflows, including interactive HTML dashboards, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. Connect real agents to the local HTTP API below.
+The project includes a static GitHub Pages build: an interactive Three.js demo with on-demand synthetic workflows, including interactive HTML dashboards, browser-simulated message traffic, replay, export, and an [API / setup guide](public/api.html). The published site has no Node/SQLite backend and never loads local histories, credentials, or real CLI traces. The site starts with an empty history. Click **Launch a demo** or **Run HTML demo** to create a browser run; reloading clears those runs. A fresh local installation also starts empty, while existing local runs persist across restarts. Connect real agents to the local HTTP API below.
 
 ```sh
 npm run build:pages
